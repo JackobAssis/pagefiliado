@@ -5,6 +5,8 @@
 // Variáveis globais
 let currentExportData = null;
 let currentExportType = null;
+let officialProducts = [];
+let currentEditProductId = null;
 
 // ========================================
 // CONFIGURAÇÃO DO PASSCODE (CLIENT-SIDE)
@@ -12,7 +14,7 @@ let currentExportType = null;
 // Observação: proteção apenas no cliente, suficiente para ocultar o painel em sites estáticos.
 // Altere o passcode abaixo conforme desejar.
 const ADMIN_LOCK_KEY = 'adminUnlocked_v1';
-const ADMIN_PASSCODE = 'ciclismo123';
+const ADMIN_PASSCODE = 'ciclismo123vida';
 
 // ========================================
 // INICIALIZAÇÃO
@@ -26,6 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inicializa proteção por passcode
     initLockGuard();
+    
+    // Carregar produtos oficiais (data/products.json)
+    loadOfficialProducts();
     
     // Carregar e exibir produtos salvos
     displaySavedProducts();
@@ -107,21 +112,22 @@ function showBackToolbar() {
 /**
  * Adiciona um novo produto ao LocalStorage
  */
-function addProduct() {
+async function addProduct() {
     // Obter valores dos campos
     const name = document.getElementById('product-name').value.trim();
     const description = document.getElementById('product-description').value.trim();
-    const image = document.getElementById('product-image').value.trim();
+    const imageUrl = document.getElementById('product-image').value.trim();
+    const imageFileEl = document.getElementById('product-image-file');
     const shopeeLink = document.getElementById('product-link').value.trim();
     
     // Validação
-    if (!name || !description || !image || !shopeeLink) {
+    if (!name || !description || (!imageUrl && (!imageFileEl || !imageFileEl.files || imageFileEl.files.length === 0)) || !shopeeLink) {
         alert('❌ Por favor, preencha todos os campos do produto!');
         return;
     }
     
-    // Validar URL da imagem
-    if (!isValidUrl(image)) {
+    // Validar URL da imagem, se informado
+    if (imageUrl && !isValidUrl(imageUrl)) {
         alert('❌ Por favor, insira uma URL válida para a imagem!');
         return;
     }
@@ -132,12 +138,24 @@ function addProduct() {
         return;
     }
     
+    // Obter imagem final: arquivo (prioridade) ou URL
+    let finalImage = imageUrl;
+    if (imageFileEl && imageFileEl.files && imageFileEl.files.length > 0) {
+        try {
+            finalImage = await readFileAsDataUrl(imageFileEl.files[0]);
+        } catch (e) {
+            console.error(e);
+            alert('❌ Falha ao ler o arquivo de imagem.');
+            return;
+        }
+    }
+
     // Criar objeto produto
     const product = {
         id: Date.now(), // Gerar ID único baseado no timestamp
         name: name,
         description: description,
-        image: image,
+        image: finalImage,
         shopeeLink: shopeeLink
     };
     
@@ -169,6 +187,10 @@ function clearProductForm() {
     document.getElementById('product-name').value = '';
     document.getElementById('product-description').value = '';
     document.getElementById('product-image').value = '';
+    const fileEl = document.getElementById('product-image-file');
+    if (fileEl) fileEl.value = '';
+    const prev = document.getElementById('product-image-preview');
+    if (prev) { prev.src = ''; prev.style.display = 'none'; }
     document.getElementById('product-link').value = '';
 }
 
@@ -416,10 +438,31 @@ function createSavedProductItem(product) {
     const id = document.createElement('small');
     id.textContent = `ID: ${product.id}`;
     
+    // Miniatura
+    if (product.image) {
+        const thumb = document.createElement('img');
+        thumb.src = product.image;
+        thumb.alt = product.name;
+        thumb.style.width = '56px';
+        thumb.style.height = '56px';
+        thumb.style.objectFit = 'cover';
+        thumb.style.marginRight = '12px';
+        thumb.style.border = '2px solid var(--neon-green)';
+        thumb.style.borderRadius = '6px';
+        info.prepend(thumb);
+    }
+
     info.appendChild(title);
     info.appendChild(description);
     info.appendChild(id);
     
+    // Botão editar
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-secondary';
+    editBtn.textContent = 'Editar';
+    editBtn.style.marginRight = '8px';
+    editBtn.onclick = () => openEditProductModal(product.id);
+
     // Botão deletar
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn btn-delete';
@@ -427,7 +470,10 @@ function createSavedProductItem(product) {
     deleteBtn.onclick = () => deleteProduct(product.id);
     
     item.appendChild(info);
-    item.appendChild(deleteBtn);
+    const actions = document.createElement('div');
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+    item.appendChild(actions);
     
     return item;
 }
@@ -570,6 +616,200 @@ function isValidUrl(string) {
         return false;
     }
 }
+
+/**
+ * Lê um arquivo como Data URL (base64)
+ */
+function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// ========================================
+// PRODUTOS OFICIAIS (data/products.json)
+// ========================================
+
+async function loadOfficialProducts() {
+    try {
+        const resp = await fetch('data/products.json');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        officialProducts = await resp.json();
+        renderOfficialProducts();
+    } catch (e) {
+        console.warn('⚠️ Não foi possível carregar produtos oficiais:', e);
+        const container = document.getElementById('official-products');
+        if (container) container.innerHTML = '<p style="color: var(--text-gray);">Não foi possível carregar data/products.json.</p>';
+    }
+}
+
+function renderOfficialProducts() {
+    const container = document.getElementById('official-products');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!officialProducts || officialProducts.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-gray);">Nenhum produto oficial.</p>';
+        return;
+    }
+    const locals = getLocalStorageProducts();
+    officialProducts.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'saved-item';
+        const info = document.createElement('div');
+        info.className = 'saved-item-info';
+        const title = document.createElement('h4');
+        title.textContent = p.name;
+        const description = document.createElement('p');
+        description.textContent = p.description.substring(0, 100) + '...';
+        const id = document.createElement('small');
+        id.textContent = `ID: ${p.id}`;
+        if (p.image) {
+            const thumb = document.createElement('img');
+            thumb.src = p.image;
+            thumb.alt = p.name;
+            thumb.style.width = '56px';
+            thumb.style.height = '56px';
+            thumb.style.objectFit = 'cover';
+            thumb.style.marginRight = '12px';
+            thumb.style.border = '2px solid var(--neon-green)';
+            thumb.style.borderRadius = '6px';
+            info.prepend(thumb);
+        }
+        info.appendChild(title);
+        info.appendChild(description);
+        info.appendChild(id);
+        const actions = document.createElement('div');
+        const existsLocal = locals.some(lp => lp.id === p.id);
+        const importBtn = document.createElement('button');
+        importBtn.className = 'btn btn-secondary';
+        importBtn.textContent = existsLocal ? 'Editar (local)' : 'Adicionar (local)';
+        importBtn.style.marginRight = '8px';
+        importBtn.onclick = () => {
+            ensureLocalProduct(p);
+            displaySavedProducts();
+            openEditProductModal(p.id);
+        };
+        const deleteLocalBtn = document.createElement('button');
+        deleteLocalBtn.className = 'btn btn-delete';
+        deleteLocalBtn.textContent = 'Excluir (local)';
+        deleteLocalBtn.onclick = () => {
+            deleteProduct(p.id);
+            renderOfficialProducts();
+        };
+        actions.appendChild(importBtn);
+        if (existsLocal) actions.appendChild(deleteLocalBtn);
+        item.appendChild(info);
+        item.appendChild(actions);
+        container.appendChild(item);
+    });
+}
+
+function ensureLocalProduct(product) {
+    const locals = getLocalStorageProducts();
+    const idx = locals.findIndex(lp => lp.id === product.id);
+    if (idx === -1) {
+        locals.push({ ...product });
+        localStorage.setItem('products', JSON.stringify(locals));
+    }
+}
+
+// ========================================
+// EDIÇÃO DE PRODUTO (LOCAL)
+// ========================================
+
+function openEditProductModal(productId) {
+    const locals = getLocalStorageProducts();
+    const product = locals.find(p => p.id === productId);
+    if (!product) {
+        alert('Produto não encontrado no LocalStorage.');
+        return;
+    }
+    currentEditProductId = productId;
+    // Preencher campos
+    document.getElementById('edit-product-name').value = product.name || '';
+    document.getElementById('edit-product-description').value = product.description || '';
+    document.getElementById('edit-product-image').value = (product.image && product.image.startsWith('http')) ? product.image : '';
+    const prev = document.getElementById('edit-product-image-preview');
+    if (product.image) { prev.src = product.image; prev.style.display = 'block'; } else { prev.src = ''; prev.style.display = 'none'; }
+    document.getElementById('edit-product-link').value = product.shopeeLink || '';
+    const fileEl = document.getElementById('edit-product-image-file');
+    if (fileEl) fileEl.value = '';
+    // Mostrar modal
+    const modal = document.getElementById('edit-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('edit-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function saveEditedProduct() {
+    if (!currentEditProductId) return;
+    const name = document.getElementById('edit-product-name').value.trim();
+    const description = document.getElementById('edit-product-description').value.trim();
+    const imageUrl = document.getElementById('edit-product-image').value.trim();
+    const imageFileEl = document.getElementById('edit-product-image-file');
+    const shopeeLink = document.getElementById('edit-product-link').value.trim();
+    if (!name || !description || (!imageUrl && (!imageFileEl || !imageFileEl.files || imageFileEl.files.length === 0)) || !shopeeLink) {
+        alert('❌ Por favor, preencha todos os campos.');
+        return;
+    }
+    if (imageUrl && !isValidUrl(imageUrl)) {
+        alert('❌ URL de imagem inválida.');
+        return;
+    }
+    if (!isValidUrl(shopeeLink)) {
+        alert('❌ URL da Shopee inválida.');
+        return;
+    }
+    let finalImage = imageUrl;
+    if (imageFileEl && imageFileEl.files && imageFileEl.files.length > 0) {
+        try {
+            finalImage = await readFileAsDataUrl(imageFileEl.files[0]);
+        } catch (e) {
+            console.error(e);
+            alert('❌ Falha ao ler o arquivo de imagem.');
+            return;
+        }
+    }
+    let locals = getLocalStorageProducts();
+    const idx = locals.findIndex(p => p.id === currentEditProductId);
+    if (idx === -1) {
+        alert('Produto não encontrado.');
+        return;
+    }
+    locals[idx] = { ...locals[idx], name, description, image: finalImage, shopeeLink };
+    localStorage.setItem('products', JSON.stringify(locals));
+    displaySavedProducts();
+    closeEditModal();
+    alert('✅ Produto atualizado com sucesso!');
+}
+
+// ========================================
+// PREVIEW DE ARQUIVO (ADD/EDIT)
+// ========================================
+
+document.addEventListener('change', (e) => {
+    const target = e.target;
+    if (target && target.id === 'product-image-file' && target.files && target.files[0]) {
+        const img = document.getElementById('product-image-preview');
+        const file = target.files[0];
+        const url = URL.createObjectURL(file);
+        img.src = url;
+        img.style.display = 'block';
+    }
+    if (target && target.id === 'edit-product-image-file' && target.files && target.files[0]) {
+        const img = document.getElementById('edit-product-image-preview');
+        const file = target.files[0];
+        const url = URL.createObjectURL(file);
+        img.src = url;
+        img.style.display = 'block';
+    }
+});
 
 // ========================================
 // LOG DE INICIALIZAÇÃO

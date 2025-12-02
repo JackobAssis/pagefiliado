@@ -238,6 +238,43 @@ nav {
 }
 
 .card-products-list {
+
+    /* ========================================
+       IMAGE PREVIEW & MODAL
+       ======================================== */
+    .image-preview-wrap {
+        margin-top: var(--spacing-sm);
+    }
+
+    .image-preview {
+        width: 160px;
+        height: 160px;
+        object-fit: cover;
+        border: 2px solid var(--neon-green);
+        border-radius: 6px;
+        display: none;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(13, 13, 13, 0.96);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2100;
+        backdrop-filter: blur(2px);
+    }
+
+    .modal-card {
+        background-color: var(--card-bg);
+        border: 2px solid var(--neon-green);
+        border-radius: 10px;
+        padding: var(--spacing-xl);
+        width: 95%;
+        max-width: 720px;
+        box-shadow: var(--card-shadow);
+    }
     background-color: var(--secondary-bg);
     padding: var(--spacing-sm);
     border-radius: 5px;
