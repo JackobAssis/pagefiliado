@@ -37,8 +37,9 @@
     <div class="admin-container">
         <div class="container">
             <!-- Toolbar visível após desbloqueio -->
-            <div id="back-toolbar" class="back-toolbar" style="display:none;">
+            <div id="back-toolbar" class="back-toolbar" style="display:none; gap: 8px;">
                 <a href="index.html" class="btn btn-secondary">← Home</a>
+                <button class="btn btn-secondary" onclick="logoutAdmin()">Sair</button>
             </div>
             
             <!-- Adicionar Produto -->
@@ -97,6 +98,14 @@
                         <label for="kit-image">URL da Imagem</label>
                         <input type="text" id="kit-image" placeholder="https://exemplo.com/kit.jpg">
                     </div>
+                    <div class="form-group">
+                        <label for="kit-image-file">Arquivo de Imagem</label>
+                        <input type="file" id="kit-image-file" accept="image/*">
+                        <small>Se um arquivo for selecionado, ele terá prioridade sobre a URL.</small>
+                        <div class="image-preview-wrap">
+                            <img id="kit-image-preview" class="image-preview" alt="Pré-visualização" />
+                        </div>
+                    </div>
                     
                     <div class="form-group">
                         <label for="kit-products">IDs dos Produtos (separados por vírgula)</label>
@@ -106,6 +115,13 @@
                     
                     <button class="btn btn-primary" onclick="addKit()">Salvar Kit</button>
                 </div>
+            </section>
+
+            <!-- Lista de Kits Oficiais -->
+            <section class="admin-section">
+                <h2 class="section-title">Kits Oficiais (data/kits.json)</h2>
+                <p class="export-info">Leitura do arquivo oficial. Edite localmente para depois exportar e substituir em /data/kits.json.</p>
+                <div id="official-kits" class="saved-list"></div>
             </section>
 
             <!-- Exportar Dados -->
@@ -188,6 +204,44 @@
                 <div>
                     <button class="btn btn-primary" onclick="saveEditedProduct()">Salvar Alterações</button>
                     <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Kit -->
+    <div id="edit-kit-modal" class="modal-overlay" style="display:none;" aria-modal="true" role="dialog">
+        <div class="modal-card">
+            <h2 class="section-title" style="margin-bottom: 1rem;">Editar Kit</h2>
+            <div class="admin-form">
+                <div class="form-group">
+                    <label for="edit-kit-name">Nome do Kit</label>
+                    <input type="text" id="edit-kit-name">
+                </div>
+                <div class="form-group">
+                    <label for="edit-kit-description">Descrição</label>
+                    <textarea id="edit-kit-description" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-kit-image">URL da Imagem</label>
+                    <input type="text" id="edit-kit-image">
+                    <small>Opcional: informe uma URL OU selecione um arquivo abaixo.</small>
+                </div>
+                <div class="form-group">
+                    <label for="edit-kit-image-file">Arquivo de Imagem</label>
+                    <input type="file" id="edit-kit-image-file" accept="image/*">
+                    <small>Se um arquivo for selecionado, ele terá prioridade sobre a URL.</small>
+                    <div class="image-preview-wrap">
+                        <img id="edit-kit-image-preview" class="image-preview" alt="Pré-visualização" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-kit-products">IDs dos Produtos (separados por vírgula)</label>
+                    <input type="text" id="edit-kit-products">
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="saveEditedKit()">Salvar Alterações</button>
+                    <button class="btn btn-secondary" onclick="closeEditKitModal()">Cancelar</button>
                 </div>
             </div>
         </div>

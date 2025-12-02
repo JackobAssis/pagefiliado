@@ -6,7 +6,9 @@
 let currentExportData = null;
 let currentExportType = null;
 let officialProducts = [];
+let officialKits = [];
 let currentEditProductId = null;
+let currentEditKitId = null;
 
 // ========================================
 // CONFIGURAÇÃO DO PASSCODE (CLIENT-SIDE)
@@ -31,6 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Carregar produtos oficiais (data/products.json)
     loadOfficialProducts();
+    // Carregar kits oficiais (data/kits.json)
+    loadOfficialKits();
     
     // Carregar e exibir produtos salvos
     displaySavedProducts();
@@ -201,21 +205,22 @@ function clearProductForm() {
 /**
  * Adiciona um novo kit ao LocalStorage
  */
-function addKit() {
+async function addKit() {
     // Obter valores dos campos
     const name = document.getElementById('kit-name').value.trim();
     const description = document.getElementById('kit-description').value.trim();
-    const image = document.getElementById('kit-image').value.trim();
+    const imageUrl = document.getElementById('kit-image').value.trim();
+    const imageFileEl = document.getElementById('kit-image-file');
     const productIdsString = document.getElementById('kit-products').value.trim();
     
     // Validação
-    if (!name || !description || !image || !productIdsString) {
+    if (!name || !description || (!imageUrl && (!imageFileEl || !imageFileEl.files || imageFileEl.files.length === 0)) || !productIdsString) {
         alert('❌ Por favor, preencha todos os campos do kit!');
         return;
     }
     
-    // Validar URL da imagem
-    if (!isValidUrl(image)) {
+    // Validar URL da imagem se informada
+    if (imageUrl && !isValidUrl(imageUrl)) {
         alert('❌ Por favor, insira uma URL válida para a imagem!');
         return;
     }
@@ -231,12 +236,24 @@ function addKit() {
         return;
     }
     
+    // Obter imagem final: arquivo (prioridade) ou URL
+    let finalImage = imageUrl;
+    if (imageFileEl && imageFileEl.files && imageFileEl.files.length > 0) {
+        try {
+            finalImage = await readFileAsDataUrl(imageFileEl.files[0]);
+        } catch (e) {
+            console.error(e);
+            alert('❌ Falha ao ler o arquivo de imagem.');
+            return;
+        }
+    }
+
     // Criar objeto kit
     const kit = {
         id: Date.now(), // Gerar ID único baseado no timestamp
         name: name,
         description: description,
-        image: image,
+        image: finalImage,
         productIds: productIds
     };
     
@@ -268,6 +285,10 @@ function clearKitForm() {
     document.getElementById('kit-name').value = '';
     document.getElementById('kit-description').value = '';
     document.getElementById('kit-image').value = '';
+    const fileEl = document.getElementById('kit-image-file');
+    if (fileEl) fileEl.value = '';
+    const prev = document.getElementById('kit-image-preview');
+    if (prev) { prev.src = ''; prev.style.display = 'none'; }
     document.getElementById('kit-products').value = '';
 }
 
@@ -521,10 +542,30 @@ function createSavedKitItem(kit) {
     const id = document.createElement('small');
     id.textContent = `ID: ${kit.id} | Produtos: ${kit.productIds.length}`;
     
+    if (kit.image) {
+        const thumb = document.createElement('img');
+        thumb.src = kit.image;
+        thumb.alt = kit.name;
+        thumb.style.width = '56px';
+        thumb.style.height = '56px';
+        thumb.style.objectFit = 'cover';
+        thumb.style.marginRight = '12px';
+        thumb.style.border = '2px solid var(--neon-green)';
+        thumb.style.borderRadius = '6px';
+        info.prepend(thumb);
+    }
+
     info.appendChild(title);
     info.appendChild(description);
     info.appendChild(id);
     
+    // Botão editar
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-secondary';
+    editBtn.textContent = 'Editar';
+    editBtn.style.marginRight = '8px';
+    editBtn.onclick = () => openEditKitModal(kit.id);
+
     // Botão deletar
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn btn-delete';
@@ -532,7 +573,10 @@ function createSavedKitItem(kit) {
     deleteBtn.onclick = () => deleteKit(kit.id);
     
     item.appendChild(info);
-    item.appendChild(deleteBtn);
+    const actions = document.createElement('div');
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+    item.appendChild(actions);
     
     return item;
 }
@@ -551,12 +595,17 @@ function deleteProduct(productId) {
     }
     
     let products = getLocalStorageProducts();
-    products = products.filter(p => p.id !== productId);
+    const targetId = Number(productId);
+    products = products.filter(p => Number(p.id) !== targetId);
     
     localStorage.setItem('products', JSON.stringify(products));
     
     console.log('🗑️ Produto deletado:', productId);
     displaySavedProducts();
+    // Atualiza visão de oficiais, se existir
+    if (document.getElementById('official-products')) {
+        try { renderOfficialProducts(); } catch (_) {}
+    }
     
     alert('✅ Produto excluído com sucesso!');
 }
@@ -571,14 +620,178 @@ function deleteKit(kitId) {
     }
     
     let kits = getLocalStorageKits();
-    kits = kits.filter(k => k.id !== kitId);
+    const targetId = Number(kitId);
+    kits = kits.filter(k => Number(k.id) !== targetId);
     
     localStorage.setItem('kits', JSON.stringify(kits));
     
     console.log('🗑️ Kit deletado:', kitId);
     displaySavedKits();
+    if (document.getElementById('official-kits')) {
+        try { renderOfficialKits(); } catch(_) {}
+    }
     
     alert('✅ Kit excluído com sucesso!');
+}
+
+// ========================================
+// OFICIAIS: KITS (data/kits.json)
+// ========================================
+
+async function loadOfficialKits() {
+    try {
+        const resp = await fetch('data/kits.json');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        officialKits = await resp.json();
+        renderOfficialKits();
+    } catch (e) {
+        console.warn('⚠️ Não foi possível carregar kits oficiais:', e);
+        const container = document.getElementById('official-kits');
+        if (container) container.innerHTML = '<p style="color: var(--text-gray);">Não foi possível carregar data/kits.json.</p>';
+    }
+}
+
+function renderOfficialKits() {
+    const container = document.getElementById('official-kits');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!officialKits || officialKits.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-gray);">Nenhum kit oficial.</p>';
+        return;
+    }
+    const locals = getLocalStorageKits();
+    officialKits.forEach(k => {
+        const item = document.createElement('div');
+        item.className = 'saved-item';
+        const info = document.createElement('div');
+        info.className = 'saved-item-info';
+        const title = document.createElement('h4');
+        title.textContent = k.name;
+        const description = document.createElement('p');
+        description.textContent = k.description.substring(0, 100) + '...';
+        const id = document.createElement('small');
+        id.textContent = `ID: ${k.id} | Produtos: ${k.productIds.length}`;
+        if (k.image) {
+            const thumb = document.createElement('img');
+            thumb.src = k.image;
+            thumb.alt = k.name;
+            thumb.style.width = '56px';
+            thumb.style.height = '56px';
+            thumb.style.objectFit = 'cover';
+            thumb.style.marginRight = '12px';
+            thumb.style.border = '2px solid var(--neon-green)';
+            thumb.style.borderRadius = '6px';
+            info.prepend(thumb);
+        }
+        info.appendChild(title);
+        info.appendChild(description);
+        info.appendChild(id);
+        const actions = document.createElement('div');
+        const existsLocal = locals.some(lk => lk.id === k.id);
+        const importBtn = document.createElement('button');
+        importBtn.className = 'btn btn-secondary';
+        importBtn.textContent = existsLocal ? 'Editar (local)' : 'Adicionar (local)';
+        importBtn.style.marginRight = '8px';
+        importBtn.onclick = () => {
+            ensureLocalKit(k);
+            displaySavedKits();
+            openEditKitModal(k.id);
+        };
+        const deleteLocalBtn = document.createElement('button');
+        deleteLocalBtn.className = 'btn btn-delete';
+        deleteLocalBtn.textContent = 'Excluir (local)';
+        deleteLocalBtn.onclick = () => {
+            deleteKit(k.id);
+            renderOfficialKits();
+        };
+        actions.appendChild(importBtn);
+        if (existsLocal) actions.appendChild(deleteLocalBtn);
+        item.appendChild(info);
+        item.appendChild(actions);
+        container.appendChild(item);
+    });
+}
+
+function ensureLocalKit(kit) {
+    const locals = getLocalStorageKits();
+    const idx = locals.findIndex(lk => lk.id === kit.id);
+    if (idx === -1) {
+        locals.push({ ...kit });
+        localStorage.setItem('kits', JSON.stringify(locals));
+    }
+}
+
+// ========================================
+// EDIÇÃO DE KIT (LOCAL)
+// ========================================
+
+function openEditKitModal(kitId) {
+    const locals = getLocalStorageKits();
+    const targetId = Number(kitId);
+    const kit = locals.find(k => Number(k.id) === targetId);
+    if (!kit) {
+        alert('Kit não encontrado no LocalStorage.');
+        return;
+    }
+    currentEditKitId = targetId;
+    document.getElementById('edit-kit-name').value = kit.name || '';
+    document.getElementById('edit-kit-description').value = kit.description || '';
+    document.getElementById('edit-kit-image').value = (kit.image && kit.image.startsWith('http')) ? kit.image : '';
+    const prev = document.getElementById('edit-kit-image-preview');
+    if (kit.image) { prev.src = kit.image; prev.style.display = 'block'; } else { prev.src = ''; prev.style.display = 'none'; }
+    document.getElementById('edit-kit-products').value = Array.isArray(kit.productIds) ? kit.productIds.join(', ') : '';
+    const fileEl = document.getElementById('edit-kit-image-file');
+    if (fileEl) fileEl.value = '';
+    const modal = document.getElementById('edit-kit-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeEditKitModal() {
+    const modal = document.getElementById('edit-kit-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function saveEditedKit() {
+    if (!currentEditKitId) return;
+    const name = document.getElementById('edit-kit-name').value.trim();
+    const description = document.getElementById('edit-kit-description').value.trim();
+    const imageUrl = document.getElementById('edit-kit-image').value.trim();
+    const imageFileEl = document.getElementById('edit-kit-image-file');
+    const productsStr = document.getElementById('edit-kit-products').value.trim();
+    if (!name || !description || !productsStr) {
+        alert('❌ Preencha nome, descrição e IDs dos produtos.');
+        return;
+    }
+    if (imageUrl && !isValidUrl(imageUrl)) {
+        alert('❌ URL de imagem inválida.');
+        return;
+    }
+    const productIds = productsStr.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+    if (productIds.length === 0) {
+        alert('❌ Informe pelo menos um ID de produto válido.');
+        return;
+    }
+    let locals = getLocalStorageKits();
+    const idx = locals.findIndex(k => Number(k.id) === Number(currentEditKitId));
+    if (idx === -1) {
+        alert('Kit não encontrado.');
+        return;
+    }
+    let finalImage = imageUrl || (locals[idx] && locals[idx].image) || '';
+    if (imageFileEl && imageFileEl.files && imageFileEl.files.length > 0) {
+        try {
+            finalImage = await readFileAsDataUrl(imageFileEl.files[0]);
+        } catch (e) {
+            console.error(e);
+            alert('❌ Falha ao ler arquivo de imagem.');
+            return;
+        }
+    }
+    locals[idx] = { ...locals[idx], name, description, image: finalImage, productIds };
+    localStorage.setItem('kits', JSON.stringify(locals));
+    displaySavedKits();
+    closeEditKitModal();
+    alert('✅ Kit atualizado com sucesso!');
 }
 
 // ========================================
@@ -722,12 +935,13 @@ function ensureLocalProduct(product) {
 
 function openEditProductModal(productId) {
     const locals = getLocalStorageProducts();
-    const product = locals.find(p => p.id === productId);
+    const targetId = Number(productId);
+    const product = locals.find(p => Number(p.id) === targetId);
     if (!product) {
         alert('Produto não encontrado no LocalStorage.');
         return;
     }
-    currentEditProductId = productId;
+    currentEditProductId = targetId;
     // Preencher campos
     document.getElementById('edit-product-name').value = product.name || '';
     document.getElementById('edit-product-description').value = product.description || '';
@@ -754,8 +968,8 @@ async function saveEditedProduct() {
     const imageUrl = document.getElementById('edit-product-image').value.trim();
     const imageFileEl = document.getElementById('edit-product-image-file');
     const shopeeLink = document.getElementById('edit-product-link').value.trim();
-    if (!name || !description || (!imageUrl && (!imageFileEl || !imageFileEl.files || imageFileEl.files.length === 0)) || !shopeeLink) {
-        alert('❌ Por favor, preencha todos os campos.');
+    if (!name || !description || !shopeeLink) {
+        alert('❌ Por favor, preencha nome, descrição e link.');
         return;
     }
     if (imageUrl && !isValidUrl(imageUrl)) {
@@ -766,7 +980,15 @@ async function saveEditedProduct() {
         alert('❌ URL da Shopee inválida.');
         return;
     }
-    let finalImage = imageUrl;
+    // Obter imagem final: arquivo > URL > imagem atual
+    let locals = getLocalStorageProducts();
+    const idx = locals.findIndex(p => p.id === currentEditProductId);
+    if (idx === -1) {
+        alert('Produto não encontrado.');
+        return;
+    }
+
+    let finalImage = imageUrl || (locals[idx] && locals[idx].image) || '';
     if (imageFileEl && imageFileEl.files && imageFileEl.files.length > 0) {
         try {
             finalImage = await readFileAsDataUrl(imageFileEl.files[0]);
@@ -775,12 +997,6 @@ async function saveEditedProduct() {
             alert('❌ Falha ao ler o arquivo de imagem.');
             return;
         }
-    }
-    let locals = getLocalStorageProducts();
-    const idx = locals.findIndex(p => p.id === currentEditProductId);
-    if (idx === -1) {
-        alert('Produto não encontrado.');
-        return;
     }
     locals[idx] = { ...locals[idx], name, description, image: finalImage, shopeeLink };
     localStorage.setItem('products', JSON.stringify(locals));
@@ -809,7 +1025,35 @@ document.addEventListener('change', (e) => {
         img.src = url;
         img.style.display = 'block';
     }
+    if (target && target.id === 'kit-image-file' && target.files && target.files[0]) {
+        const img = document.getElementById('kit-image-preview');
+        const file = target.files[0];
+        const url = URL.createObjectURL(file);
+        img.src = url;
+        img.style.display = 'block';
+    }
+    if (target && target.id === 'edit-kit-image-file' && target.files && target.files[0]) {
+        const img = document.getElementById('edit-kit-image-preview');
+        const file = target.files[0];
+        const url = URL.createObjectURL(file);
+        img.src = url;
+        img.style.display = 'block';
+    }
 });
+
+// ========================================
+// LOGOUT DO ADMIN
+// ========================================
+
+function logoutAdmin() {
+    try {
+        localStorage.removeItem(ADMIN_LOCK_KEY);
+    } catch(_) {}
+    const overlay = document.getElementById('lock-overlay');
+    if (overlay) overlay.style.display = 'flex';
+    const bar = document.getElementById('back-toolbar');
+    if (bar) bar.style.display = 'none';
+}
 
 // ========================================
 // LOG DE INICIALIZAÇÃO
