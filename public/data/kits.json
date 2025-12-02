@@ -1,0 +1,16 @@
+[
+    {
+        "id": 1701234567900,
+        "name": "Kit Completo Pro Rider",
+        "description": "Kit completo para ciclistas profissionais e entusiastas. Inclui todos os itens essenciais para máxima performance e segurança. Perfeito para quem está começando ou quer renovar todo o equipamento.",
+        "image": "https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=500&h=500&fit=crop",
+        "productIds": [1701234567890, 1701234567891, 1701234567892, 1701234567893]
+    },
+    {
+        "id": 1701234567901,
+        "name": "Kit Vestimenta Performance",
+        "description": "Conjunto de vestimenta profissional para ciclismo. Tecidos de alta tecnologia com secagem rápida e máximo conforto. Ideal para treinos e competições de longa distância.",
+        "image": "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=500&h=500&fit=crop",
+        "productIds": [1701234567894, 1701234567895]
+    }
+]

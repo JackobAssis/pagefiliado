@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Ciclismo Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">🚴 Ciclismo Pro - Admin</h1>
+            <nav>
+                <a href="index.html" class="nav-link">Loja</a>
+                <a href="admin.html" class="nav-link active">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Admin Content -->
+    <div class="admin-container">
+        <div class="container">
+            
+            <!-- Adicionar Produto -->
+            <section class="admin-section">
+                <h2 class="section-title">Adicionar Produto</h2>
+                <div class="admin-form">
+                    <div class="form-group">
+                        <label for="product-name">Nome do Produto</label>
+                        <input type="text" id="product-name" placeholder="Ex: Capacete Aerodinâmico Pro">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="product-description">Descrição</label>
+                        <textarea id="product-description" rows="4" placeholder="Descreva o produto..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="product-image">URL da Imagem</label>
+                        <input type="text" id="product-image" placeholder="https://exemplo.com/imagem.jpg">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="product-link">Link da Shopee (Afiliado)</label>
+                        <input type="text" id="product-link" placeholder="https://shopee.com.br/...">
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="addProduct()">Salvar Produto</button>
+                </div>
+            </section>
+
+            <!-- Adicionar Kit -->
+            <section class="admin-section">
+                <h2 class="section-title">Adicionar Kit</h2>
+                <div class="admin-form">
+                    <div class="form-group">
+                        <label for="kit-name">Nome do Kit</label>
+                        <input type="text" id="kit-name" placeholder="Ex: Kit Completo Pro Rider">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kit-description">Descrição</label>
+                        <textarea id="kit-description" rows="4" placeholder="Descreva o kit..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kit-image">URL da Imagem</label>
+                        <input type="text" id="kit-image" placeholder="https://exemplo.com/kit.jpg">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kit-products">IDs dos Produtos (separados por vírgula)</label>
+                        <input type="text" id="kit-products" placeholder="Ex: 1701234567890, 1701234567891, 1701234567892">
+                        <small>Cole os IDs dos produtos que fazem parte deste kit</small>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="addKit()">Salvar Kit</button>
+                </div>
+            </section>
+
+            <!-- Exportar Dados -->
+            <section class="admin-section">
+                <h2 class="section-title">Exportar Dados</h2>
+                <p class="export-info">Use estes botões para exportar os dados do LocalStorage e atualizar os arquivos JSON na pasta /data</p>
+                
+                <div class="export-buttons">
+                    <button class="btn btn-export" onclick="exportProducts()">Exportar Produtos (JSON)</button>
+                    <button class="btn btn-export" onclick="exportKits()">Exportar Kits (JSON)</button>
+                </div>
+
+                <!-- Área de Exportação -->
+                <div id="export-area" class="export-area" style="display: none;">
+                    <h3 id="export-title"></h3>
+                    <textarea id="export-output" rows="15" readonly></textarea>
+                    <button class="btn btn-secondary" onclick="copyToClipboard()">Copiar para Área de Transferência</button>
+                    <button class="btn btn-secondary" onclick="downloadJSON()">Download JSON</button>
+                </div>
+            </section>
+
+            <!-- Lista de Produtos Salvos -->
+            <section class="admin-section">
+                <h2 class="section-title">Produtos Salvos (LocalStorage)</h2>
+                <div id="saved-products" class="saved-list">
+                    <!-- Lista será carregada via JavaScript -->
+                </div>
+            </section>
+
+            <!-- Lista de Kits Salvos -->
+            <section class="admin-section">
+                <h2 class="section-title">Kits Salvos (LocalStorage)</h2>
+                <div id="saved-kits" class="saved-list">
+                    <!-- Lista será carregada via JavaScript -->
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Ciclismo Pro - Painel Administrativo</p>
+        </div>
+    </footer>
+
+    <!-- Script -->
+    <script src="scripts/admin.js"></script>
+</body>
+</html>
