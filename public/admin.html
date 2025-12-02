@@ -3,258 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Painel administrativo - Ciclismo Pro">
     <title>Admin - Ciclismo Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <h1 class="logo">🚴 Ciclismo Pro - Admin</h1>
-            <nav>
-                <a href="index.html" class="nav-link">Loja</a>
-                <a href="admin.html" class="nav-link active">Admin</a>
-            </nav>
+    <!-- Lock Overlay (Proteção por senha) -->
+    <div id="lock-overlay" class="lock-overlay">
+        <div class="lock-box">
+            <h2>🔒 Área Restrita</h2>
+            <p style="color: var(--text-gray); margin-bottom: 1rem;">
+                Digite o passcode para acessar o painel
+            </p>
+            <input 
+                type="password" 
+                id="admin-passcode" 
+                class="admin-input"
+                placeholder="Digite o passcode"
+                autocomplete="current-password"
+            >
+            <button class="btn" id="unlock-btn">Desbloquear</button>
+            <p id="lock-error" style="color: #ff4444; margin-top: 0.5rem; font-size: 0.9rem;"></p>
         </div>
-    </header>
+    </div>
 
-        <!-- Lock Overlay (Passcode) -->
-        <div id="lock-overlay" class="lock-overlay" aria-modal="true" role="dialog">
-            <div class="lock-card">
-                <h2 class="section-title" style="margin-bottom: 1rem;">Área Restrita</h2>
-                <p style="color: var(--text-gray); margin-bottom: 1rem;">Insira o passcode para acessar o painel administrativo.</p>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="admin-passcode">Passcode</label>
-                    <input type="password" id="admin-passcode" placeholder="Digite o passcode" autocomplete="current-password" />
-                </div>
-                <button class="btn btn-primary" id="unlock-btn">Desbloquear</button>
-                <p id="lock-error" class="lock-error" aria-live="polite"></p>
-                <small class="lock-hint">Dica: personalize o passcode em <code>scripts/admin.js</code>.</small>
+    <!-- Admin Content (visível após desbloquear) -->
+    <div id="admin-content" style="display: none;">
+        <!-- Toolbar -->
+        <div class="admin-toolbar">
+            <h1>🚴 Admin - Ciclismo Pro</h1>
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="index.html" class="btn" style="background: #0088cc; width: auto; padding: 0.5rem 1rem;">
+                    ← Home
+                </a>
+                <button class="btn btn-logout" id="logout-btn">Sair</button>
             </div>
         </div>
 
-    <!-- Admin Content -->
-    <div class="admin-container">
-        <div class="container">
-            <!-- Toolbar visível após desbloqueio -->
-            <div id="back-toolbar" class="back-toolbar" style="display:none; gap: 8px;">
-                <a href="index.html" class="btn btn-secondary">← Home</a>
-                <button class="btn btn-secondary" onclick="logoutAdmin()">Sair</button>
+        <!-- Main Admin Section -->
+        <div class="admin-section">
+            <h2 style="color: var(--whatsapp-green); margin-bottom: var(--spacing-lg);">
+                Adicionar Produto
+            </h2>
+
+            <!-- Formulário Simplificado -->
+            <div class="admin-form">
+                <div class="form-group">
+                    <label>🔗 Link da Shopee</label>
+                    <input 
+                        type="url" 
+                        id="shopee-link" 
+                        class="admin-input"
+                        placeholder="Cole o link completo do produto na Shopee"
+                    >
+                    <small style="color: var(--text-gray); display: block; margin-top: 0.25rem;">
+                        Ex: https://shopee.com.br/produto-exemplo
+                    </small>
+                </div>
+
+                <button class="btn" id="auto-fill-btn" style="margin-bottom: var(--spacing-lg);">
+                    🔍 Tentar Preencher Automaticamente
+                </button>
+
+                <hr style="border: none; border-top: 1px solid rgba(0, 255, 106, 0.2); margin: var(--spacing-lg) 0;">
+
+                <h3 style="color: var(--whatsapp-green); margin-bottom: var(--spacing-md);">
+                    Preencher Manualmente
+                </h3>
+
+                <div class="form-group">
+                    <label>📝 Nome do Produto</label>
+                    <input 
+                        type="text" 
+                        id="product-name" 
+                        class="admin-input"
+                        placeholder="Digite o nome do produto"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>📄 Descrição</label>
+                    <textarea 
+                        id="product-description" 
+                        class="admin-input"
+                        placeholder="Digite a descrição do produto"
+                        rows="4"
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>🖼️ URL da Imagem</label>
+                    <input 
+                        type="url" 
+                        id="product-image" 
+                        class="admin-input"
+                        placeholder="Cole a URL da imagem do produto"
+                    >
+                    <small style="color: var(--text-gray); display: block; margin-top: 0.25rem;">
+                        Ou faça upload de um arquivo:
+                    </small>
+                    <input 
+                        type="file" 
+                        id="product-image-file" 
+                        accept="image/*"
+                        style="margin-top: 0.5rem; color: var(--text-gray);"
+                    >
+                </div>
+
+                <!-- Preview do Produto -->
+                <div id="product-preview" class="preview-container" style="display: none;">
+                    <h3>📦 Preview</h3>
+                    <div style="display: grid; gap: var(--spacing-sm); margin-top: var(--spacing-sm);">
+                        <img id="preview-image" class="preview-image" alt="Preview">
+                        <p><strong>Nome:</strong> <span id="preview-name"></span></p>
+                        <p><strong>Descrição:</strong> <span id="preview-desc"></span></p>
+                        <p><strong>Link:</strong> <a id="preview-link" target="_blank" style="color: var(--whatsapp-green);">Ver link</a></p>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-md);">
+                    <button class="btn" id="save-product-btn">💾 Salvar Produto</button>
+                    <button 
+                        class="btn" 
+                        id="clear-form-btn"
+                        style="background: #666;"
+                    >
+                        🗑️ Limpar
+                    </button>
+                </div>
             </div>
-            
-            <!-- Adicionar Produto -->
-            <section class="admin-section">
-                <h2 class="section-title">Adicionar Produto</h2>
-                <div class="admin-form">
-                    <div class="form-group">
-                        <label for="product-name">Nome do Produto</label>
-                        <input type="text" id="product-name" placeholder="Ex: Capacete Aerodinâmico Pro">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="product-description">Descrição</label>
-                        <textarea id="product-description" rows="4" placeholder="Descreva o produto..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="product-image">URL da Imagem</label>
-                        <input type="text" id="product-image" placeholder="https://exemplo.com/imagem.jpg">
-                        <small>Opcional: informe uma URL de imagem OU selecione um arquivo abaixo.</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="product-image-file">Arquivo de Imagem</label>
-                        <input type="file" id="product-image-file" accept="image/*">
-                        <small>Se um arquivo for selecionado, ele terá prioridade sobre a URL.</small>
-                        <div class="image-preview-wrap">
-                            <img id="product-image-preview" class="image-preview" alt="Pré-visualização" />
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="product-link">Link da Shopee (Afiliado)</label>
-                        <input type="text" id="product-link" placeholder="https://shopee.com.br/...">
-                    </div>
-                    
-                    <button class="btn btn-primary" onclick="addProduct()">Salvar Produto</button>
-                </div>
-            </section>
-
-            <!-- Adicionar Kit -->
-            <section class="admin-section">
-                <h2 class="section-title">Adicionar Kit</h2>
-                <div class="admin-form">
-                    <div class="form-group">
-                        <label for="kit-name">Nome do Kit</label>
-                        <input type="text" id="kit-name" placeholder="Ex: Kit Completo Pro Rider">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="kit-description">Descrição</label>
-                        <textarea id="kit-description" rows="4" placeholder="Descreva o kit..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="kit-image">URL da Imagem</label>
-                        <input type="text" id="kit-image" placeholder="https://exemplo.com/kit.jpg">
-                    </div>
-                    <div class="form-group">
-                        <label for="kit-image-file">Arquivo de Imagem</label>
-                        <input type="file" id="kit-image-file" accept="image/*">
-                        <small>Se um arquivo for selecionado, ele terá prioridade sobre a URL.</small>
-                        <div class="image-preview-wrap">
-                            <img id="kit-image-preview" class="image-preview" alt="Pré-visualização" />
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="kit-products">IDs dos Produtos (separados por vírgula)</label>
-                        <input type="text" id="kit-products" placeholder="Ex: 1701234567890, 1701234567891, 1701234567892">
-                        <small>Cole os IDs dos produtos que fazem parte deste kit</small>
-                    </div>
-                    
-                    <button class="btn btn-primary" onclick="addKit()">Salvar Kit</button>
-                </div>
-            </section>
-
-            <!-- Lista de Kits Oficiais -->
-            <section class="admin-section">
-                <h2 class="section-title">Kits Oficiais (data/kits.json)</h2>
-                <p class="export-info">Leitura do arquivo oficial. Edite localmente para depois exportar e substituir em /data/kits.json.</p>
-                <div id="official-kits" class="saved-list"></div>
-            </section>
-
-            <!-- Exportar Dados -->
-            <section class="admin-section">
-                <h2 class="section-title">Exportar Dados</h2>
-                <p class="export-info">Use estes botões para exportar os dados do LocalStorage e atualizar os arquivos JSON na pasta /data</p>
-                
-                <div class="export-buttons">
-                    <button class="btn btn-export" onclick="exportProducts()">Exportar Produtos (JSON)</button>
-                    <button class="btn btn-export" onclick="exportKits()">Exportar Kits (JSON)</button>
-                </div>
-
-                <!-- Área de Exportação -->
-                <div id="export-area" class="export-area" style="display: none;">
-                    <h3 id="export-title"></h3>
-                    <textarea id="export-output" rows="15" readonly></textarea>
-                    <button class="btn btn-secondary" onclick="copyToClipboard()">Copiar para Área de Transferência</button>
-                    <button class="btn btn-secondary" onclick="downloadJSON()">Download JSON</button>
-                </div>
-            </section>
 
             <!-- Lista de Produtos Salvos -->
-            <section class="admin-section">
-                <h2 class="section-title">Produtos Oficiais (data/products.json)</h2>
-                <p class="export-info">Visualização em somente leitura. Para editar/excluir, use "Editar (local)", que cria/atualiza uma cópia no seu navegador (LocalStorage).</p>
-                <div id="official-products" class="saved-list">
-                    <!-- Lista será carregada via JavaScript -->
-                </div>
-            </section>
+            <div style="margin-top: var(--spacing-xl);">
+                <h2 style="color: var(--whatsapp-green); margin-bottom: var(--spacing-md);">
+                    📋 Produtos Salvos
+                </h2>
+                <div id="products-list" class="products-list"></div>
+            </div>
 
-            <!-- Lista de Produtos Salvos (LocalStorage) -->
-            <section class="admin-section">
-                <h2 class="section-title">Produtos Salvos (LocalStorage)</h2>
-                <div id="saved-products" class="saved-list">
-                    <!-- Lista será carregada via JavaScript -->
-                </div>
-            </section>
-
-            <!-- Lista de Kits Salvos -->
-            <section class="admin-section">
-                <h2 class="section-title">Kits Salvos (LocalStorage)</h2>
-                <div id="saved-kits" class="saved-list">
-                    <!-- Lista será carregada via JavaScript -->
-                </div>
-            </section>
-
-        </div>
-    </div>
-
-    <!-- Modal Editar Produto -->
-    <div id="edit-modal" class="modal-overlay" style="display:none;" aria-modal="true" role="dialog">
-        <div class="modal-card">
-            <h2 class="section-title" style="margin-bottom: 1rem;">Editar Produto</h2>
-            <div class="admin-form">
-                <div class="form-group">
-                    <label for="edit-product-name">Nome do Produto</label>
-                    <input type="text" id="edit-product-name">
-                </div>
-                <div class="form-group">
-                    <label for="edit-product-description">Descrição</label>
-                    <textarea id="edit-product-description" rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="edit-product-image">URL da Imagem</label>
-                    <input type="text" id="edit-product-image">
-                    <small>Opcional: informe uma URL OU selecione um arquivo abaixo.</small>
-                </div>
-                <div class="form-group">
-                    <label for="edit-product-image-file">Arquivo de Imagem</label>
-                    <input type="file" id="edit-product-image-file" accept="image/*">
-                    <small>Se um arquivo for selecionado, ele terá prioridade sobre a URL.</small>
-                    <div class="image-preview-wrap">
-                        <img id="edit-product-image-preview" class="image-preview" alt="Pré-visualização" />
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="edit-product-link">Link da Shopee (Afiliado)</label>
-                    <input type="text" id="edit-product-link">
-                </div>
-                <div>
-                    <button class="btn btn-primary" onclick="saveEditedProduct()">Salvar Alterações</button>
-                    <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
-                </div>
+            <!-- Botão de Exportar -->
+            <div style="margin-top: var(--spacing-lg); text-align: center;">
+                <button 
+                    class="btn" 
+                    id="export-btn"
+                    style="background: #ff9500; max-width: 400px;"
+                >
+                    📥 Exportar para products.json
+                </button>
+                <p style="color: var(--text-gray); font-size: 0.9rem; margin-top: 0.5rem;">
+                    Salve o arquivo na pasta <code>/public/data/</code>
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Modal Editar Kit -->
-    <div id="edit-kit-modal" class="modal-overlay" style="display:none;" aria-modal="true" role="dialog">
-        <div class="modal-card">
-            <h2 class="section-title" style="margin-bottom: 1rem;">Editar Kit</h2>
-            <div class="admin-form">
-                <div class="form-group">
-                    <label for="edit-kit-name">Nome do Kit</label>
-                    <input type="text" id="edit-kit-name">
-                </div>
-                <div class="form-group">
-                    <label for="edit-kit-description">Descrição</label>
-                    <textarea id="edit-kit-description" rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="edit-kit-image">URL da Imagem</label>
-                    <input type="text" id="edit-kit-image">
-                    <small>Opcional: informe uma URL OU selecione um arquivo abaixo.</small>
-                </div>
-                <div class="form-group">
-                    <label for="edit-kit-image-file">Arquivo de Imagem</label>
-                    <input type="file" id="edit-kit-image-file" accept="image/*">
-                    <small>Se um arquivo for selecionado, ele terá prioridade sobre a URL.</small>
-                    <div class="image-preview-wrap">
-                        <img id="edit-kit-image-preview" class="image-preview" alt="Pré-visualização" />
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="edit-kit-products">IDs dos Produtos (separados por vírgula)</label>
-                    <input type="text" id="edit-kit-products">
-                </div>
-                <div>
-                    <button class="btn btn-primary" onclick="saveEditedKit()">Salvar Alterações</button>
-                    <button class="btn btn-secondary" onclick="closeEditKitModal()">Cancelar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025 Ciclismo Pro - Painel Administrativo</p>
-        </div>
-    </footer>
-
-    <!-- Script -->
     <script src="scripts/admin.js"></script>
 </body>
 </html>

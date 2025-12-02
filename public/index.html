@@ -3,44 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tudo para Ciclismo- Peças Equipamentos</title>
+    <meta name="description" content="Catálogo de produtos para ciclismo - Equipamentos e acessórios">
+    <title>Ciclismo Pro - Catálogo de Produtos</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Header -->
     <header class="header">
         <div class="container">
-            <h1 class="logo">🚴 Tudo para Ciclismo </h1>
-            <nav>
-                <a href="admin.html" class="nav-link active">Login</a>
-            </nav>
+            <h1 class="logo">🚴 Ciclismo Pro</h1>
+            <a href="admin.html" class="admin-link">Admin</a>
         </div>
     </header>
 
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <h2 class="hero-title">Equipamentos para Ciclistas</h2>
-            <p class="hero-subtitle">Encontre os melhores produtos para elevar sua performance</p>
+            <h2 class="hero-title">Equipamentos Premium</h2>
+            <p class="hero-subtitle">Os melhores produtos para sua performance</p>
         </div>
     </section>
 
-    <!-- Produtos Section -->
+    <!-- Produtos Grid 2x2 -->
     <section class="products-section">
         <div class="container">
-            <h2 class="section-title">Produtos</h2>
-            <div id="products-grid" class="grid">
-                <!-- Produtos serão carregados aqui via JavaScript -->
+            <h2 class="section-title">Nossos Produtos</h2>
+            
+            <!-- Loading State -->
+            <div id="loading" class="loading-state">
+                <p>Carregando produtos...</p>
             </div>
-        </div>
-    </section>
-
-    <!-- Kits Section -->
-    <section class="kits-section">
-        <div class="container">
-            <h2 class="section-title">Kits Completos</h2>
-            <div id="kits-grid" class="grid">
-                <!-- Kits serão carregados aqui via JavaScript -->
+            
+            <!-- Error State -->
+            <div id="error" class="error-state" style="display:none;">
+                <p>Não foi possível carregar os produtos. Tente novamente mais tarde.</p>
+            </div>
+            
+            <!-- Grid de Produtos (2x2 desktop, 1 coluna mobile) -->
+            <div id="products-grid" class="product-grid">
+                <!-- Produtos serão carregados aqui via JavaScript -->
             </div>
         </div>
     </section>
@@ -48,12 +49,12 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 Ciclismo Pro - Equipamentos de Alta Performance</p>
-            <p class="footer-note">Links de afiliado Shopee - Obrigado pelo seu apoio!</p>
+            <p>&copy; 2025 Ciclismo Pro - Afiliado Shopee</p>
+            <p class="footer-note">Links de afiliado - Obrigado pelo apoio!</p>
         </div>
     </footer>
 
-    <!-- Script -->
+    <!-- Script principal (carrega no final) -->
     <script src="scripts/app.js"></script>
 </body>
 </html>
