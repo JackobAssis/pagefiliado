@@ -53,6 +53,7 @@ function initLockGuard() {
     const unlocked = localStorage.getItem(ADMIN_LOCK_KEY) === 'true';
     if (unlocked) {
         hideLockOverlay();
+        showBackToolbar();
         return;
     }
 
@@ -81,6 +82,7 @@ function attemptUnlock(inputEl, errorEl) {
     if (value === ADMIN_PASSCODE) {
         localStorage.setItem(ADMIN_LOCK_KEY, 'true');
         hideLockOverlay();
+        showBackToolbar();
         console.log('🔓 Admin desbloqueado');
     } else {
         errorEl.textContent = 'Passcode incorreto. Tente novamente.';
@@ -91,6 +93,11 @@ function attemptUnlock(inputEl, errorEl) {
 function hideLockOverlay() {
     const overlay = document.getElementById('lock-overlay');
     if (overlay) overlay.style.display = 'none';
+}
+
+function showBackToolbar() {
+    const bar = document.getElementById('back-toolbar');
+    if (bar) bar.style.display = 'flex';
 }
 
 // ========================================

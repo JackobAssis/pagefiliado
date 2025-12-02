@@ -369,6 +369,12 @@ nav {
     max-width: 800px;
 }
 
+.back-toolbar {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: var(--spacing-md);
+}
+
 .form-group {
     margin-bottom: var(--spacing-md);
 }
