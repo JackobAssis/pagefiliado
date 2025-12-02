@@ -7,6 +7,14 @@ let currentExportData = null;
 let currentExportType = null;
 
 // ========================================
+// CONFIGURAÇÃO DO PASSCODE (CLIENT-SIDE)
+// ========================================
+// Observação: proteção apenas no cliente, suficiente para ocultar o painel em sites estáticos.
+// Altere o passcode abaixo conforme desejar.
+const ADMIN_LOCK_KEY = 'adminUnlocked_v1';
+const ADMIN_PASSCODE = 'ciclismo123';
+
+// ========================================
 // INICIALIZAÇÃO
 // ========================================
 
@@ -15,6 +23,9 @@ let currentExportType = null;
  */
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🔧 Painel Admin carregado');
+
+    // Inicializa proteção por passcode
+    initLockGuard();
     
     // Carregar e exibir produtos salvos
     displaySavedProducts();
@@ -22,6 +33,65 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carregar e exibir kits salvos
     displaySavedKits();
 });
+
+// ========================================
+// BLOQUEIO POR PASSCODE
+// ========================================
+
+function initLockGuard() {
+    const overlay = document.getElementById('lock-overlay');
+    const input = document.getElementById('admin-passcode');
+    const btn = document.getElementById('unlock-btn');
+    const error = document.getElementById('lock-error');
+
+    if (!overlay || !input || !btn) {
+        console.warn('⚠️ Overlay de bloqueio não encontrado.');
+        return;
+    }
+
+    // Se já desbloqueado anteriormente neste navegador, esconde o overlay
+    const unlocked = localStorage.getItem(ADMIN_LOCK_KEY) === 'true';
+    if (unlocked) {
+        hideLockOverlay();
+        return;
+    }
+
+    // Foca no input ao carregar
+    setTimeout(() => input.focus(), 50);
+
+    // Tenta desbloquear ao clicar
+    btn.addEventListener('click', () => attemptUnlock(input, error));
+
+    // Tenta desbloquear com Enter
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            attemptUnlock(input, error);
+        }
+    });
+}
+
+function attemptUnlock(inputEl, errorEl) {
+    const value = (inputEl.value || '').trim();
+    if (!value) {
+        errorEl.textContent = 'Informe o passcode.';
+        inputEl.focus();
+        return;
+    }
+
+    if (value === ADMIN_PASSCODE) {
+        localStorage.setItem(ADMIN_LOCK_KEY, 'true');
+        hideLockOverlay();
+        console.log('🔓 Admin desbloqueado');
+    } else {
+        errorEl.textContent = 'Passcode incorreto. Tente novamente.';
+        inputEl.select();
+    }
+}
+
+function hideLockOverlay() {
+    const overlay = document.getElementById('lock-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
 
 // ========================================
 // ADICIONAR PRODUTO

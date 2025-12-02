@@ -471,6 +471,47 @@ nav {
     font-size: 0.8rem;
 }
 
+/* Admin Lock Overlay */
+.lock-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 13, 13, 0.96);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(2px);
+}
+
+.lock-card {
+    background-color: var(--card-bg);
+    border: 2px solid var(--neon-green);
+    border-radius: 10px;
+    padding: var(--spacing-xl);
+    width: 95%;
+    max-width: 520px;
+    box-shadow: var(--card-shadow);
+    text-align: left;
+}
+
+.lock-card .form-group input {
+    background-color: var(--secondary-bg);
+    border: 2px solid var(--neon-green);
+    color: var(--text-light);
+}
+
+.lock-error {
+    color: #ff3333;
+    margin-top: var(--spacing-sm);
+    min-height: 1.2rem;
+}
+
+.lock-hint {
+    display: block;
+    color: var(--text-gray);
+    margin-top: var(--spacing-sm);
+}
+
 /* ========================================
    FOOTER
    ======================================== */

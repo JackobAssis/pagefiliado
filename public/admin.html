@@ -18,6 +18,21 @@
         </div>
     </header>
 
+        <!-- Lock Overlay (Passcode) -->
+        <div id="lock-overlay" class="lock-overlay" aria-modal="true" role="dialog">
+            <div class="lock-card">
+                <h2 class="section-title" style="margin-bottom: 1rem;">Área Restrita</h2>
+                <p style="color: var(--text-gray); margin-bottom: 1rem;">Insira o passcode para acessar o painel administrativo.</p>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="admin-passcode">Passcode</label>
+                    <input type="password" id="admin-passcode" placeholder="Digite o passcode" autocomplete="current-password" />
+                </div>
+                <button class="btn btn-primary" id="unlock-btn">Desbloquear</button>
+                <p id="lock-error" class="lock-error" aria-live="polite"></p>
+                <small class="lock-hint">Dica: personalize o passcode em <code>scripts/admin.js</code>.</small>
+            </div>
+        </div>
+
     <!-- Admin Content -->
     <div class="admin-container">
         <div class="container">
