@@ -11,6 +11,20 @@ let products = [];
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚴 Ciclismo Pro - Carregando produtos...');
     loadProducts();
+    
+    // Detectar mudanças no localStorage (quando admin adiciona produtos)
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'products') {
+            console.log('🔄 Produtos atualizados! Recarregando...');
+            loadProducts();
+        }
+    });
+    
+    // Detectar evento customizado (mesma aba)
+    window.addEventListener('productsUpdated', () => {
+        console.log('🔄 Produtos atualizados! Recarregando...');
+        loadProducts();
+    });
 });
 
 // ========================================
@@ -27,31 +41,59 @@ async function loadProducts() {
         if (loading) loading.style.display = 'block';
         if (errorDiv) errorDiv.style.display = 'none';
         
-        // Tentar carregar do JSON
-        const response = await fetch('data/products.json');
+        // Array para armazenar todos os produtos
+        let jsonProducts = [];
+        let localProducts = [];
         
-        if (!response.ok) {
-            throw new Error(`Erro HTTP: ${response.status}`);
+        // 1. Tentar carregar produtos do JSON (produtos oficiais)
+        try {
+            const response = await fetch('data/products.json');
+            if (response.ok) {
+                jsonProducts = await response.json();
+                console.log(`✅ ${jsonProducts.length} produtos do JSON carregados`);
+            }
+        } catch (error) {
+            console.warn('⚠️ Não foi possível carregar products.json:', error);
         }
         
-        products = await response.json();
-        console.log(`✅ ${products.length} produtos carregados`);
+        // 2. Carregar produtos do localStorage (produtos adicionados pelo admin)
+        const savedProducts = localStorage.getItem('products');
+        if (savedProducts) {
+            try {
+                localProducts = JSON.parse(savedProducts);
+                console.log(`📦 ${localProducts.length} produtos do localStorage carregados`);
+            } catch (error) {
+                console.warn('⚠️ Erro ao carregar localStorage:', error);
+            }
+        }
+        
+        // 3. Mesclar produtos (localStorage tem prioridade e aparece primeiro)
+        products = [...localProducts, ...jsonProducts];
+        
+        // 4. Remover duplicatas por ID
+        const uniqueProducts = [];
+        const seenIds = new Set();
+        
+        products.forEach(product => {
+            if (!seenIds.has(product.id)) {
+                seenIds.add(product.id);
+                uniqueProducts.push(product);
+            }
+        });
+        
+        products = uniqueProducts;
+        console.log(`🎯 Total: ${products.length} produtos únicos`);
         
         // Renderizar produtos
-        renderProducts(container);
+        if (products.length > 0) {
+            renderProducts(container);
+        } else {
+            showError(container, errorDiv, 'Nenhum produto disponível no momento. Adicione produtos pelo painel admin.');
+        }
         
     } catch (error) {
         console.error('❌ Erro ao carregar produtos:', error);
-        
-        // Fallback: tentar localStorage
-        const localProducts = localStorage.getItem('products');
-        if (localProducts) {
-            products = JSON.parse(localProducts);
-            console.log(`📦 ${products.length} produtos do localStorage`);
-            renderProducts(container);
-        } else {
-            showError(container, errorDiv, 'Não foi possível carregar os produtos. Tente novamente mais tarde.');
-        }
+        showError(container, errorDiv, 'Erro ao carregar produtos. Tente recarregar a página.');
     } finally {
         if (loading) loading.style.display = 'none';
     }

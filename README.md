@@ -39,6 +39,8 @@ pagefiliado/
 
 ### 3️⃣ Adicionar Produtos
 
+**✨ NOVO: Os produtos aparecem automaticamente na página inicial!**
+
 **Opção 1: Automática (em breve)**
 - Cole o link da Shopee
 - Clique em "Tentar Preencher Automaticamente"
@@ -48,12 +50,27 @@ pagefiliado/
 2. Preencha nome, descrição
 3. Cole URL da imagem OU faça upload de arquivo
 4. Clique em "Salvar Produto"
+5. ✅ **O produto aparece IMEDIATAMENTE como card na página inicial!**
 
-### 4️⃣ Exportar Produtos
+### 4️⃣ Como Funciona
+
+**Sistema Híbrido de Produtos:**
+- **localStorage**: Produtos adicionados pelo admin (aparecem primeiro)
+- **products.json**: Produtos oficiais/fixos do catálogo
+- **Resultado**: Ambos aparecem na página inicial, sem duplicatas
+
+**Atualização em Tempo Real:**
+- Ao salvar um produto → aparece instantaneamente na loja
+- Ao editar um produto → atualização automática
+- Ao excluir um produto → remoção imediata da loja
+
+### 5️⃣ Exportar Produtos (Opcional)
+
+Para tornar produtos permanentes (mesmo após limpar navegador):
 
 1. No admin, clique em "Exportar para products.json"
 2. Salve o arquivo baixado em `/public/data/products.json`
-3. Recarregue a página principal para ver as alterações
+3. Os produtos agora são permanentes
 
 ## 🔐 Segurança
 
@@ -123,6 +140,8 @@ const ADMIN_PASSCODE = 'sua_senha_aqui';
 - ✅ Upload de imagens (Base64)
 - ✅ Exportar JSON
 - ✅ CRUD de produtos
+- ✅ **Atualização em tempo real** (produtos aparecem instantaneamente na loja)
+- ✅ **Sistema híbrido** (localStorage + JSON)
 - ⏳ Auto-fill via link Shopee (em breve)
 
 ## 📞 Suporte

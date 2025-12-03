@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -45,11 +45,17 @@
             <h2 style="color: var(--whatsapp-green); margin-bottom: var(--spacing-lg);">
                 Adicionar Produto
             </h2>
+            
+            <div style="background: rgba(0, 255, 106, 0.1); border: 1px solid var(--whatsapp-green); border-radius: 8px; padding: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+                <p style="margin: 0; font-size: 0.95rem;">
+                    ✨ <strong>Novo:</strong> Produtos aparecem automaticamente na página inicial assim que você salvar!
+                </p>
+            </div>
 
             <!-- Formulário Simplificado -->
             <div class="admin-form">
                 <div class="form-group">
-                    <label>🔗 Link da Shopee</label>
+                    <label>🔗 Link da Shopee <span style="color: #ff4444;">*</span></label>
                     <input 
                         type="url" 
                         id="shopee-link" 
@@ -57,7 +63,7 @@
                         placeholder="Cole o link completo do produto na Shopee"
                     >
                     <small style="color: var(--text-gray); display: block; margin-top: 0.25rem;">
-                        Ex: https://shopee.com.br/produto-exemplo
+                        Ex: https://shopee.com.br/produto-exemplo (campo obrigatório)
                     </small>
                 </div>
 
@@ -68,36 +74,36 @@
                 <hr style="border: none; border-top: 1px solid rgba(0, 255, 106, 0.2); margin: var(--spacing-lg) 0;">
 
                 <h3 style="color: var(--whatsapp-green); margin-bottom: var(--spacing-md);">
-                    Preencher Manualmente
+                    Preencher Manualmente (Opcional)
                 </h3>
 
                 <div class="form-group">
-                    <label>📝 Nome do Produto</label>
+                    <label>📝 Nome do Produto <small style="color: var(--text-gray); font-weight: normal;">(opcional)</small></label>
                     <input 
                         type="text" 
                         id="product-name" 
                         class="admin-input"
-                        placeholder="Digite o nome do produto"
+                        placeholder="Digite o nome do produto (padrão: 'Produto sem nome')"
                     >
                 </div>
 
                 <div class="form-group">
-                    <label>📄 Descrição</label>
+                    <label>📄 Descrição <small style="color: var(--text-gray); font-weight: normal;">(opcional)</small></label>
                     <textarea 
                         id="product-description" 
                         class="admin-input"
-                        placeholder="Digite a descrição do produto"
+                        placeholder="Digite a descrição do produto (padrão: 'Sem descrição disponível')"
                         rows="4"
                     ></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label>🖼️ URL da Imagem</label>
+                    <label>🖼️ URL da Imagem <small style="color: var(--text-gray); font-weight: normal;">(opcional)</small></label>
                     <input 
                         type="url" 
                         id="product-image" 
                         class="admin-input"
-                        placeholder="Cole a URL da imagem do produto"
+                        placeholder="Cole a URL da imagem do produto (padrão: placeholder)"
                     >
                     <small style="color: var(--text-gray); display: block; margin-top: 0.25rem;">
                         Ou faça upload de um arquivo:
@@ -136,8 +142,11 @@
             <!-- Lista de Produtos Salvos -->
             <div style="margin-top: var(--spacing-xl);">
                 <h2 style="color: var(--whatsapp-green); margin-bottom: var(--spacing-md);">
-                    📋 Produtos Salvos
+                    📋 Produtos Salvos (Visíveis na Loja)
                 </h2>
+                <p style="color: var(--text-gray); font-size: 0.9rem; margin-bottom: var(--spacing-sm);">
+                    Estes produtos estão exibidos como cards na página inicial
+                </p>
                 <div id="products-list" class="products-list"></div>
             </div>
 

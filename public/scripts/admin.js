@@ -242,28 +242,18 @@ function saveProduct() {
     const image = document.getElementById('product-image')?.value.trim();
     const link = document.getElementById('shopee-link')?.value.trim();
     
-    // Validação
-    if (!name) {
-        alert('❌ Nome do produto é obrigatório!');
-        return;
-    }
-    
+    // Validação - apenas link é obrigatório
     if (!link) {
         alert('❌ Link da Shopee é obrigatório!');
         return;
     }
     
-    if (!image) {
-        alert('❌ Imagem é obrigatória! Cole uma URL ou faça upload.');
-        return;
-    }
-    
-    // Criar produto
+    // Criar produto com valores padrão quando vazios
     const product = {
         id: Date.now(),
-        name: name,
-        description: desc || 'Sem descrição',
-        image: image,
+        name: name || 'Produto sem nome',
+        description: desc || 'Sem descrição disponível',
+        image: image || 'https://via.placeholder.com/400x250?text=Sem+Imagem',
         shopeeLink: link
     };
     
@@ -279,8 +269,16 @@ function saveProduct() {
     // Limpar formulário
     clearForm();
     
-    alert('✅ Produto salvo com sucesso!');
+    // Notificar sucesso
+    alert('✅ Produto salvo com sucesso!\n\nO produto já está visível na página inicial.');
     console.log('✅ Produto adicionado:', product);
+    
+    // Disparar evento personalizado para notificar outras abas/janelas
+    try {
+        window.dispatchEvent(new Event('productsUpdated'));
+    } catch (e) {
+        console.log('Event dispatch não suportado');
+    }
 }
 
 // ========================================
@@ -350,17 +348,26 @@ function editProduct(index) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     updatePreview();
+    
+    alert('✏️ Produto carregado para edição.\n\nApós salvar, a mudança aparecerá na página inicial.');
 }
 
 function deleteProduct(index) {
     const product = products[index];
     if (!product) return;
     
-    if (confirm(`Excluir "${product.name}"?`)) {
+    if (confirm(`Excluir "${product.name}"?\n\nEste produto será removido da página inicial.`)) {
         products.splice(index, 1);
         renderProducts();
         saveToLocalStorage();
-        alert('✅ Produto excluído!');
+        alert('✅ Produto excluído!\n\nA mudança já está visível na página inicial.');
+        
+        // Disparar evento de atualização
+        try {
+            window.dispatchEvent(new Event('productsUpdated'));
+        } catch (e) {
+            console.log('Event dispatch não suportado');
+        }
     }
 }
 
