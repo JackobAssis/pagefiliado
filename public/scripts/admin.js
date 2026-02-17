@@ -1,5 +1,5 @@
 // ========================================
-// ADMIN.JS - Painel Administrativo Simplificado
+// ADMIN.JS - Painel Administrativo
 // ========================================
 
 // Configurações
@@ -15,15 +15,9 @@ let allProducts = [];    // Todos os produtos (mesclados)
 // ========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔒 Admin Panel - Inicializando...');
-    
-    // Verificar se já está desbloqueado
+    console.log('Admin Panel - Inicializando...');
     initLockGuard();
-    
-    // Carregar produtos salvos
     loadProducts();
-    
-    // Event Listeners
     setupEventListeners();
 });
 
@@ -39,7 +33,6 @@ function initLockGuard() {
     if (isUnlocked) {
         if (lockOverlay) lockOverlay.style.display = 'none';
         if (adminContent) adminContent.style.display = 'block';
-        console.log('✅ Admin já desbloqueado');
     } else {
         if (lockOverlay) lockOverlay.style.display = 'flex';
         if (adminContent) adminContent.style.display = 'none';
@@ -57,15 +50,12 @@ function attemptUnlock() {
     const enteredPasscode = input.value.trim();
     
     if (enteredPasscode === ADMIN_PASSCODE) {
-        // Desbloqueado!
         localStorage.setItem(ADMIN_LOCK_KEY, 'true');
         if (lockOverlay) lockOverlay.style.display = 'none';
         if (adminContent) adminContent.style.display = 'block';
-        console.log('✅ Admin desbloqueado');
     } else {
-        // Senha incorreta
         if (errorMsg) {
-            errorMsg.textContent = '❌ Passcode incorreto!';
+            errorMsg.textContent = 'Passcode incorreto!';
             setTimeout(() => errorMsg.textContent = '', 3000);
         }
         input.value = '';
@@ -85,7 +75,6 @@ function logoutAdmin() {
 // ========================================
 
 function setupEventListeners() {
-    // Unlock
     const unlockBtn = document.getElementById('unlock-btn');
     const passcodeInput = document.getElementById('admin-passcode');
     
@@ -96,40 +85,33 @@ function setupEventListeners() {
         });
     }
     
-    // Logout
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.addEventListener('click', logoutAdmin);
     
-    // Auto-fill via link Shopee
     const autoFillBtn = document.getElementById('auto-fill-btn');
     if (autoFillBtn) autoFillBtn.addEventListener('click', autoFillFromShopee);
     
-    // Upload de imagem
     const imageFile = document.getElementById('product-image-file');
     if (imageFile) imageFile.addEventListener('change', handleImageUpload);
     
-    // Preview em tempo real
     const inputs = ['product-name', 'product-description', 'product-image', 'shopee-link'];
     inputs.forEach(id => {
         const input = document.getElementById(id);
         if (input) input.addEventListener('input', updatePreview);
     });
     
-    // Salvar produto
     const saveBtn = document.getElementById('save-product-btn');
     if (saveBtn) saveBtn.addEventListener('click', saveProduct);
     
-    // Limpar formulário
     const clearBtn = document.getElementById('clear-form-btn');
     if (clearBtn) clearBtn.addEventListener('click', clearForm);
     
-    // Exportar JSON
     const exportBtn = document.getElementById('export-btn');
     if (exportBtn) exportBtn.addEventListener('click', exportProducts);
 }
 
 // ========================================
-// AUTO-PREENCHIMENTO VIA LINK SHOPEE
+// AUTO-PREENCHIMENTO
 // ========================================
 
 async function autoFillFromShopee() {
@@ -137,21 +119,16 @@ async function autoFillFromShopee() {
     const link = linkInput?.value.trim();
     
     if (!link) {
-        alert('❌ Por favor, cole o link da Shopee primeiro!');
+        alert('Por favor, cole o link da Shopee primeiro!');
         return;
     }
     
-    // Validar se é um link válido
     if (!link.includes('shopee')) {
-        alert('❌ Link inválido! Use um link da Shopee.');
+        alert('Link invalido! Use um link da Shopee.');
         return;
     }
     
-    alert('⚠️ Auto-preenchimento ainda não implementado.\n\nPor enquanto, preencha manualmente os campos abaixo.\n\nEm breve: extração automática de título, imagem e descrição!');
-    
-    // TODO: Implementar web scraping ou API da Shopee
-    // Por enquanto, deixar usuário preencher manualmente
-    
+    alert('Auto-preenchimento ainda nao implementado. Preencha manualmente.');
     document.getElementById('product-name')?.focus();
 }
 
@@ -163,15 +140,13 @@ async function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    // Validar tipo
     if (!file.type.startsWith('image/')) {
-        alert('❌ Por favor, selecione um arquivo de imagem válido!');
+        alert('Selecione um arquivo de imagem valido!');
         return;
     }
     
-    // Validar tamanho (máx 2MB)
     if (file.size > 2 * 1024 * 1024) {
-        alert('❌ Imagem muito grande! Tamanho máximo: 2MB');
+        alert('Imagem muito grande! Tamanho maximo: 2MB');
         return;
     }
     
@@ -182,10 +157,8 @@ async function handleImageUpload(event) {
             imageInput.value = base64;
             updatePreview();
         }
-        console.log('✅ Imagem carregada como base64');
     } catch (error) {
-        console.error('Erro ao ler imagem:', error);
-        alert('❌ Erro ao processar a imagem!');
+        alert('Erro ao processar a imagem!');
     }
 }
 
@@ -199,7 +172,7 @@ function readFileAsBase64(file) {
 }
 
 // ========================================
-// PREVIEW DO PRODUTO
+// PREVIEW
 // ========================================
 
 function updatePreview() {
@@ -214,11 +187,10 @@ function updatePreview() {
     const previewDesc = document.getElementById('preview-desc');
     const previewLink = document.getElementById('preview-link');
     
-    // Mostrar preview se houver dados
     if (name || desc || image) {
         if (preview) preview.style.display = 'block';
         if (previewName) previewName.textContent = name || '(sem nome)';
-        if (previewDesc) previewDesc.textContent = desc || '(sem descrição)';
+        if (previewDesc) previewDesc.textContent = desc || '(sem descricao)';
         if (previewLink) previewLink.href = link || '#';
         
         if (previewImage) {
@@ -244,50 +216,37 @@ function saveProduct() {
     const image = document.getElementById('product-image')?.value.trim();
     const link = document.getElementById('shopee-link')?.value.trim();
     
-    // Validação - apenas link é obrigatório
     if (!link) {
-        alert('❌ Link da Shopee é obrigatório!');
+        alert('Link da Shopee e obrigatorio!');
         return;
     }
     
-    // Criar produto com valores padrão quando vazios
     const product = {
         id: Date.now(),
         name: name || 'Produto sem nome',
-        description: desc || 'Sem descrição disponível',
+        description: desc || 'Sem descricao disponivel',
         image: image || 'https://via.placeholder.com/400x250?text=Sem+Imagem',
         shopeeLink: link
     };
     
-    // Adicionar à lista de produtos do admin
     localProducts.push(product);
-    
-    // Salvar no localStorage
     saveToLocalStorage();
-    
-    // Atualizar lista completa (mesclar com JSON)
     allProducts = [...localProducts, ...jsonProducts];
-    
-    // Atualizar lista visual
     renderProducts();
-    
-    // Limpar formulário
     clearForm();
     
-    // Notificar sucesso
-    alert('✅ Produto salvo com sucesso!\n\nO produto já está visível na página inicial.');
-    console.log('✅ Produto adicionado:', product);
+    alert('Produto salvo com sucesso!');
+    console.log('Produto adicionado:', product);
     
-    // Disparar evento personalizado para notificar outras abas/janelas
     try {
         window.dispatchEvent(new Event('productsUpdated'));
     } catch (e) {
-        console.log('Event dispatch não suportado');
+        console.log('Event dispatch nao suportado');
     }
 }
 
 // ========================================
-// RENDERIZAR TODOS OS PRODUTOS
+// RENDERIZAR PRODUTOS
 // ========================================
 
 function renderProducts() {
@@ -297,16 +256,19 @@ function renderProducts() {
     container.innerHTML = '';
     
     if (allProducts.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-gray); text-align: center;">Nenhum produto disponível.</p>';
+        container.innerHTML = '<p style="color: var(--text-gray); text-align: center;">Nenhum produto disponivel.</p>';
         return;
     }
     
-    allProducts.forEach((product, index) => {
+    // Criar um mapeamento de IDs para índices no localProducts
+    const localProductIds = new Set(localProducts.map(p => p.id));
+    
+    allProducts.forEach((product) => {
+        const localIndex = localProducts.findIndex(p => p.id === product.id);
+        const isFromAdmin = localIndex !== -1;
+        
         const item = document.createElement('div');
         item.className = 'product-item';
-        
-        // Verificar se é produto do admin (localStorage) ou do JSON
-        const isFromAdmin = localProducts.some(p => p.id === product.id);
         
         item.innerHTML = `
             <img 
@@ -318,28 +280,46 @@ function renderProducts() {
             <div class="product-info">
                 <h3>${escapeHtml(product.name)}</h3>
                 <p>${escapeHtml(truncate(product.description, 100))}</p>
-                ${isFromAdmin ? '<span style="color: var(--whatsapp-green); font-size: 0.8rem;">📦 Admin</span>' : '<span style="color: var(--text-gray); font-size: 0.8rem;">📄 JSON</span>'}
+                ${isFromAdmin ? '<span style="color: var(--whatsapp-green); font-size: 0.8rem;">Admin</span>' : '<span style="color: var(--text-gray); font-size: 0.8rem;">JSON</span>'}
             </div>
             <div class="product-actions">
-                ${isFromAdmin ? `
-                    <button class="btn btn-small btn-edit" onclick="editProduct(${localProducts.findIndex(p => p.id === product.id)})">✏️ Editar</button>
-                    <button class="btn btn-small btn-delete" onclick="deleteProduct(${localProducts.findIndex(p => p.id === product.id)})">🗑️ Excluir</button>
-                ` : '<span style="color: var(--text-gray); font-size: 0.85rem;">Apenas visualização</span>'}
+                <button class="btn btn-small btn-edit" onclick="editProduct(${localIndex}, ${product.id})">Editar</button>
+                <button class="btn btn-small btn-delete" onclick="deleteProduct(${localIndex}, ${product.id})">Excluir</button>
             </div>
         `;
         
         container.appendChild(item);
     });
-    
-    console.log(`✅ ${allProducts.length} produtos renderizados (${localProducts.length} admin, ${jsonProducts.length} JSON)`);
 }
 
 // ========================================
-// EDITAR E EXCLUIR PRODUTOS
+// EDITAR PRODUTO
 // ========================================
 
-function editProduct(index) {
-    const product = localProducts[index];
+function editProduct(localIndex, productId) {
+    let product;
+    
+    // Se o índice for -1, o produto é do JSON e precisamos copiá-lo para o localStorage
+    if (localIndex === -1) {
+        // Encontrar o produto no JSON
+        product = jsonProducts.find(p => p.id === productId);
+        if (!product) {
+            alert('Produto nao encontrado!');
+            return;
+        }
+        
+        // Criar uma cópia para o localStorage
+        const productCopy = { ...product };
+        localProducts.push(productCopy);
+        
+        // Atualizar o índice para o último item adicionado
+        localIndex = localProducts.length - 1;
+        
+        alert('Produto copiado do JSON para edicao. Agora voce pode modificar e salvar.');
+    } else {
+        product = localProducts[localIndex];
+    }
+    
     if (!product) return;
     
     // Preencher formulário
@@ -348,8 +328,8 @@ function editProduct(index) {
     document.getElementById('product-image').value = product.image;
     document.getElementById('shopee-link').value = product.shopeeLink;
     
-    // Remover produto antigo
-    localProducts.splice(index, 1);
+    // Remover produto antigo (para permitir re-salvar como novo)
+    localProducts.splice(localIndex, 1);
     
     // Atualizar lista completa
     allProducts = [...localProducts, ...jsonProducts];
@@ -361,25 +341,46 @@ function editProduct(index) {
     
     updatePreview();
     
-    alert('✏️ Produto carregado para edição.\n\nApós salvar, a mudança aparecerá na página inicial.');
+    alert('Produto carregado para edicao. Apos salvar, a mudanca aparecera na pagina inicial.');
 }
 
-function deleteProduct(index) {
-    const product = localProducts[index];
+// ========================================
+// EXCLUIR PRODUTO
+// ========================================
+
+function deleteProduct(localIndex, productId) {
+    let product;
+    
+    // Se o índice for -1, o produto é do JSON
+    if (localIndex === -1) {
+        // Encontrar o produto no JSON
+        product = jsonProducts.find(p => p.id === productId);
+        if (!product) {
+            alert('Produto nao encontrado!');
+            return;
+        }
+        
+        if (confirm(`Excluir "${product.name}"?\n\nEste produto e do arquivo JSON original. Para remove-lo, primeiro EDITE este produto (isso ira copia-lo para o localStorage) e entao EXCLUA.\n\nDeseja editar agora?`)) {
+            // Chamar editProduct para copiar para o localStorage
+            editProduct(-1, productId);
+        }
+        return;
+    }
+    
+    product = localProducts[localIndex];
     if (!product) return;
     
-    if (confirm(`Excluir "${product.name}"?\n\nEste produto será removido da página inicial.`)) {
-        localProducts.splice(index, 1);
+    if (confirm(`Excluir "${product.name}"?\n\nEste produto sera removido da pagina inicial.`)) {
+        localProducts.splice(localIndex, 1);
         allProducts = [...localProducts, ...jsonProducts];
         renderProducts();
         saveToLocalStorage();
-        alert('✅ Produto excluído!\n\nA mudança já está visível na página inicial.');
+        alert('Produto excluido! A mudanca ja esta visivel na pagina inicial.');
         
-        // Disparar evento de atualização
         try {
             window.dispatchEvent(new Event('productsUpdated'));
         } catch (e) {
-            console.log('Event dispatch não suportado');
+            console.log('Event dispatch nao suportado');
         }
     }
 }
@@ -400,37 +401,33 @@ function clearForm() {
 }
 
 // ========================================
-// CARREGAR E SALVAR PRODUTOS
+// CARREGAR PRODUTOS
 // ========================================
 
 async function loadProducts() {
-    console.log('📦 Carregando produtos...');
+    console.log('Carregando produtos...');
     
-    // 1. Carregar produtos do localStorage (admin)
+    // 1. Carregar produtos do localStorage
     const saved = localStorage.getItem('products');
     if (saved) {
         try {
             localProducts = JSON.parse(saved);
-            console.log(`📦 ${localProducts.length} produtos do localStorage`);
         } catch (error) {
-            console.error('Erro ao carregar localStorage:', error);
             localProducts = [];
         }
     }
     
-    // 2. Carregar produtos do JSON oficial
+    // 2. Carregar produtos do JSON
     try {
         const response = await fetch('data/products.json');
         if (response.ok) {
             jsonProducts = await response.json();
-            console.log(`📄 ${jsonProducts.length} produtos do JSON carregados`);
         }
     } catch (error) {
-        console.warn('⚠️ Não foi possível carregar products.json:', error);
         jsonProducts = [];
     }
     
-    // 3. Mesclar produtos (localStorage primeiro)
+    // 3. Mesclar produtos
     allProducts = [...localProducts, ...jsonProducts];
     
     // 4. Remover duplicatas por ID
@@ -445,7 +442,6 @@ async function loadProducts() {
     });
     
     allProducts = uniqueProducts;
-    console.log(`🎯 Total: ${allProducts.length} produtos únicos`);
     
     renderProducts();
 }
@@ -453,10 +449,8 @@ async function loadProducts() {
 function saveToLocalStorage() {
     try {
         localStorage.setItem('products', JSON.stringify(localProducts));
-        console.log('💾 Produtos salvos no localStorage');
     } catch (error) {
-        console.error('Erro ao salvar no localStorage:', error);
-        alert('❌ Erro ao salvar! localStorage pode estar cheio.');
+        alert('Erro ao salvar! localStorage pode estar cheio.');
     }
 }
 
@@ -466,7 +460,7 @@ function saveToLocalStorage() {
 
 function exportProducts() {
     if (allProducts.length === 0) {
-        alert('❌ Não há produtos para exportar!');
+        alert('Nao ha produtos para exportar!');
         return;
     }
     
@@ -481,7 +475,7 @@ function exportProducts() {
     
     URL.revokeObjectURL(url);
     
-    alert(`✅ ${allProducts.length} produtos exportados!\n\nSalve o arquivo em: /public/data/products.json`);
+    alert(allProducts.length + ' produtos exportados!');
 }
 
 // ========================================
@@ -498,3 +492,4 @@ function truncate(text, maxLength) {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
+
