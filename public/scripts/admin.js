@@ -6,7 +6,9 @@
 const ADMIN_PASSCODE = 'ciclismo123vida';
 const ADMIN_LOCK_KEY = 'adminUnlocked_v1';
 
-let products = [];
+let localProducts = [];   // Produtos do admin (localStorage)
+let jsonProducts = [];   // Produtos do JSON oficial
+let allProducts = [];    // Todos os produtos (mesclados)
 
 // ========================================
 // INICIALIZAÇÃO
@@ -257,11 +259,14 @@ function saveProduct() {
         shopeeLink: link
     };
     
-    // Adicionar à lista
-    products.push(product);
+    // Adicionar à lista de produtos do admin
+    localProducts.push(product);
     
     // Salvar no localStorage
     saveToLocalStorage();
+    
+    // Atualizar lista completa (mesclar com JSON)
+    allProducts = [...localProducts, ...jsonProducts];
     
     // Atualizar lista visual
     renderProducts();
@@ -282,7 +287,7 @@ function saveProduct() {
 }
 
 // ========================================
-// RENDERIZAR PRODUTOS SALVOS
+// RENDERIZAR TODOS OS PRODUTOS
 // ========================================
 
 function renderProducts() {
@@ -291,14 +296,17 @@ function renderProducts() {
     
     container.innerHTML = '';
     
-    if (products.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-gray); text-align: center;">Nenhum produto salvo ainda.</p>';
+    if (allProducts.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-gray); text-align: center;">Nenhum produto disponível.</p>';
         return;
     }
     
-    products.forEach((product, index) => {
+    allProducts.forEach((product, index) => {
         const item = document.createElement('div');
         item.className = 'product-item';
+        
+        // Verificar se é produto do admin (localStorage) ou do JSON
+        const isFromAdmin = localProducts.some(p => p.id === product.id);
         
         item.innerHTML = `
             <img 
@@ -310,17 +318,20 @@ function renderProducts() {
             <div class="product-info">
                 <h3>${escapeHtml(product.name)}</h3>
                 <p>${escapeHtml(truncate(product.description, 100))}</p>
+                ${isFromAdmin ? '<span style="color: var(--whatsapp-green); font-size: 0.8rem;">📦 Admin</span>' : '<span style="color: var(--text-gray); font-size: 0.8rem;">📄 JSON</span>'}
             </div>
             <div class="product-actions">
-                <button class="btn btn-small btn-edit" onclick="editProduct(${index})">✏️ Editar</button>
-                <button class="btn btn-small btn-delete" onclick="deleteProduct(${index})">🗑️ Excluir</button>
+                ${isFromAdmin ? `
+                    <button class="btn btn-small btn-edit" onclick="editProduct(${localProducts.findIndex(p => p.id === product.id)})">✏️ Editar</button>
+                    <button class="btn btn-small btn-delete" onclick="deleteProduct(${localProducts.findIndex(p => p.id === product.id)})">🗑️ Excluir</button>
+                ` : '<span style="color: var(--text-gray); font-size: 0.85rem;">Apenas visualização</span>'}
             </div>
         `;
         
         container.appendChild(item);
     });
     
-    console.log(`✅ ${products.length} produtos renderizados`);
+    console.log(`✅ ${allProducts.length} produtos renderizados (${localProducts.length} admin, ${jsonProducts.length} JSON)`);
 }
 
 // ========================================
@@ -328,7 +339,7 @@ function renderProducts() {
 // ========================================
 
 function editProduct(index) {
-    const product = products[index];
+    const product = localProducts[index];
     if (!product) return;
     
     // Preencher formulário
@@ -338,9 +349,10 @@ function editProduct(index) {
     document.getElementById('shopee-link').value = product.shopeeLink;
     
     // Remover produto antigo
-    products.splice(index, 1);
+    localProducts.splice(index, 1);
     
-    // Atualizar lista
+    // Atualizar lista completa
+    allProducts = [...localProducts, ...jsonProducts];
     renderProducts();
     saveToLocalStorage();
     
@@ -353,11 +365,12 @@ function editProduct(index) {
 }
 
 function deleteProduct(index) {
-    const product = products[index];
+    const product = localProducts[index];
     if (!product) return;
     
     if (confirm(`Excluir "${product.name}"?\n\nEste produto será removido da página inicial.`)) {
-        products.splice(index, 1);
+        localProducts.splice(index, 1);
+        allProducts = [...localProducts, ...jsonProducts];
         renderProducts();
         saveToLocalStorage();
         alert('✅ Produto excluído!\n\nA mudança já está visível na página inicial.');
@@ -387,26 +400,59 @@ function clearForm() {
 }
 
 // ========================================
-// CARREGAR E SALVAR NO LOCALSTORAGE
+// CARREGAR E SALVAR PRODUTOS
 // ========================================
 
-function loadProducts() {
+async function loadProducts() {
+    console.log('📦 Carregando produtos...');
+    
+    // 1. Carregar produtos do localStorage (admin)
     const saved = localStorage.getItem('products');
     if (saved) {
         try {
-            products = JSON.parse(saved);
-            console.log(`📦 ${products.length} produtos carregados do localStorage`);
+            localProducts = JSON.parse(saved);
+            console.log(`📦 ${localProducts.length} produtos do localStorage`);
         } catch (error) {
-            console.error('Erro ao carregar produtos:', error);
-            products = [];
+            console.error('Erro ao carregar localStorage:', error);
+            localProducts = [];
         }
     }
+    
+    // 2. Carregar produtos do JSON oficial
+    try {
+        const response = await fetch('data/products.json');
+        if (response.ok) {
+            jsonProducts = await response.json();
+            console.log(`📄 ${jsonProducts.length} produtos do JSON carregados`);
+        }
+    } catch (error) {
+        console.warn('⚠️ Não foi possível carregar products.json:', error);
+        jsonProducts = [];
+    }
+    
+    // 3. Mesclar produtos (localStorage primeiro)
+    allProducts = [...localProducts, ...jsonProducts];
+    
+    // 4. Remover duplicatas por ID
+    const uniqueProducts = [];
+    const seenIds = new Set();
+    
+    allProducts.forEach(product => {
+        if (!seenIds.has(product.id)) {
+            seenIds.add(product.id);
+            uniqueProducts.push(product);
+        }
+    });
+    
+    allProducts = uniqueProducts;
+    console.log(`🎯 Total: ${allProducts.length} produtos únicos`);
+    
     renderProducts();
 }
 
 function saveToLocalStorage() {
     try {
-        localStorage.setItem('products', JSON.stringify(products));
+        localStorage.setItem('products', JSON.stringify(localProducts));
         console.log('💾 Produtos salvos no localStorage');
     } catch (error) {
         console.error('Erro ao salvar no localStorage:', error);
@@ -419,12 +465,12 @@ function saveToLocalStorage() {
 // ========================================
 
 function exportProducts() {
-    if (products.length === 0) {
+    if (allProducts.length === 0) {
         alert('❌ Não há produtos para exportar!');
         return;
     }
     
-    const json = JSON.stringify(products, null, 2);
+    const json = JSON.stringify(allProducts, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     
@@ -435,7 +481,7 @@ function exportProducts() {
     
     URL.revokeObjectURL(url);
     
-    alert(`✅ ${products.length} produtos exportados!\n\nSalve o arquivo em: /public/data/products.json`);
+    alert(`✅ ${allProducts.length} produtos exportados!\n\nSalve o arquivo em: /public/data/products.json`);
 }
 
 // ========================================
