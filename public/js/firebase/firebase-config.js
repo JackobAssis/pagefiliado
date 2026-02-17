@@ -49,5 +49,5 @@ initFirebase();
 // EXPORTS
 // ========================================
 
-export { app, db, storage, auth, firebaseConfig };
+export { app, db, storage, auth, firebaseConfig, initFirebase };
 
