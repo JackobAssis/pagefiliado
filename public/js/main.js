@@ -2,17 +2,11 @@
 // MAIN.JS - Arquivo Principal de Inicialização
 // ========================================
 
-// Importar módulos
-import { initFirebase } from './firebase/firebase-config.js';
+// Importar módulos do Firebase
+import { initFirebase, auth } from './firebase/firebase-config.js';
+import { login, logout, onAuthChange } from './firebase/auth-service.js';
 import { fetchAllProducts, createNewProduct, editProduct, removeProduct, fetchProduct } from './controllers/product-controller.js';
 import { initUIElements, renderProductsGrid, renderProductsList, showLoading, hideLoading, showError, showNotification, clearForm, updatePreview } from './ui/ui-controller.js';
-
-// ========================================
-// CONFIGURAÇÕES
-// ========================================
-
-const ADMIN_PASSCODE = 'ciclismo123vida';
-const ADMIN_LOCK_KEY = 'adminUnlocked_v1';
 
 // ========================================
 // INICIALIZAÇÃO
@@ -21,6 +15,7 @@ const ADMIN_LOCK_KEY = 'adminUnlocked_v1';
 let currentProducts = [];
 let isEditing = false;
 let editingProductId = null;
+let authUnsubscribe = null;
 
 // Inicializar quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', async () => {
@@ -43,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ========================================
-// PÁGINA PRINCIPAL (INDEX)
+// PÁGINA PRINCIPAL (INDEX) - PÚBLICA
 // ========================================
 
 async function initMainPage() {
@@ -74,51 +69,103 @@ async function loadProducts() {
 }
 
 // ========================================
-// ADMIN LOCK/UNLOCK
+// AUTENTICAÇÃO FIREBASE
 // ========================================
 
-function initLockGuard() {
-  const isUnlocked = localStorage.getItem(ADMIN_LOCK_KEY) === 'true';
-  const lockOverlay = document.getElementById('lock-overlay');
-  const adminContent = document.getElementById('admin-content');
-  
-  if (isUnlocked) {
-    if (lockOverlay) lockOverlay.style.display = 'none';
-    if (adminContent) adminContent.style.display = 'block';
-  } else {
-    if (lockOverlay) lockOverlay.style.display = 'flex';
-    if (adminContent) adminContent.style.display = 'none';
-  }
+function setupAuthListener() {
+  // Configurar listener de autenticação
+  authUnsubscribe = onAuthChange((state) => {
+    const lockOverlay = document.getElementById('lock-overlay');
+    const adminContent = document.getElementById('admin-content');
+    const userInfo = document.getElementById('user-info');
+    const loginForm = document.getElementById('login-form');
+    
+    if (state.isAuthenticated) {
+      // Usuário logado - mostrar área admin
+      console.log('Usuário autenticado, mostrando admin...');
+      
+      if (lockOverlay) lockOverlay.style.display = 'none';
+      if (adminContent) adminContent.style.display = 'block';
+      
+      // Atualizar info do usuário
+      if (userInfo) {
+        userInfo.textContent = `Logado como: ${state.user.email}`;
+      }
+      
+      // Ocultar formulário de login
+      if (loginForm) loginForm.style.display = 'none';
+      
+      // Carregar produtos do admin
+      loadAdminProducts();
+      
+    } else {
+      // Usuário não logado - mostrar login
+      console.log('Usuário não autenticado, mostrando login...');
+      
+      if (lockOverlay) lockOverlay.style.display = 'flex';
+      if (adminContent) adminContent.style.display = 'none';
+      
+      // Mostrar formulário de login
+      if (loginForm) loginForm.style.display = 'block';
+    }
+  });
 }
 
-function attemptUnlock() {
-  const input = document.getElementById('admin-passcode');
-  const errorMsg = document.getElementById('lock-error');
-  const lockOverlay = document.getElementById('lock-overlay');
-  const adminContent = document.getElementById('admin-content');
+async function handleLogin(event) {
+  event.preventDefault();
   
-  if (!input) return;
+  const emailInput = document.getElementById('admin-email');
+  const passwordInput = document.getElementById('admin-password');
+  const errorMsg = document.getElementById('login-error');
+  const loginBtn = document.getElementById('login-btn');
   
-  const enteredPasscode = input.value.trim();
+  if (!emailInput || !passwordInput) return;
   
-  if (enteredPasscode === ADMIN_PASSCODE) {
-    localStorage.setItem(ADMIN_LOCK_KEY, 'true');
-    if (lockOverlay) lockOverlay.style.display = 'none';
-    if (adminContent) adminContent.style.display = 'block';
-  } else {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  
+  if (!email || !password) {
     if (errorMsg) {
-      errorMsg.textContent = 'Passcode incorreto!';
+      errorMsg.textContent = 'Preencha email e senha';
       setTimeout(() => errorMsg.textContent = '', 3000);
     }
-    input.value = '';
-    input.focus();
+    return;
+  }
+  
+  // Desabilitar botão durante login
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Entrando...';
+  }
+  
+  const result = await login(email, password);
+  
+  // Reabilitar botão
+  if (loginBtn) {
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Entrar';
+  }
+  
+  if (result.success) {
+    console.log('Login bem-sucedido!');
+    // O auth listener会自动处理UI更新
+  } else {
+    if (errorMsg) {
+      errorMsg.textContent = result.message;
+      setTimeout(() => errorMsg.textContent = '', 5000);
+    }
   }
 }
 
-function logoutAdmin() {
-  if (confirm('Deseja realmente sair do painel admin?')) {
-    localStorage.removeItem(ADMIN_LOCK_KEY);
-    location.reload();
+async function handleLogout() {
+  if (confirm('Deseja realmente sair?')) {
+    const result = await logout();
+    if (result.success) {
+      showNotification('Logout realizado!');
+      // O auth listener会自动处理UI更新
+    } else {
+      showNotification('Erro ao fazer logout');
+    }
   }
 }
 
@@ -129,32 +176,29 @@ function logoutAdmin() {
 async function initAdminPage() {
   console.log('Inicializando pagina admin...');
   
-  // Inicializar sistema de bloqueio
-  initLockGuard();
-  setupLockEvents();
+  // Configurar listener de autenticação
+  setupAuthEvents();
+  setupAuthListener();
   
   // Configurar eventos do formulário
   setupFormEvents();
   
   // Configurar eventos de produtos
   setupProductEvents();
-  
-  // Carregar produtos
-  await loadAdminProducts();
 }
 
-function setupLockEvents() {
-  const unlockBtn = document.getElementById('unlock-btn');
-  const passcodeInput = document.getElementById('admin-passcode');
-  const logoutBtn = document.getElementById('logout-btn');
-  
-  if (unlockBtn) unlockBtn.addEventListener('click', attemptUnlock);
-  if (passcodeInput) {
-    passcodeInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') attemptUnlock();
-    });
+function setupAuthEvents() {
+  // Login form
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
   }
-  if (logoutBtn) logoutBtn.addEventListener('click', logoutAdmin);
+  
+  // Logout button
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', handleLogout);
+  }
 }
 
 async function loadAdminProducts() {
@@ -293,6 +337,8 @@ async function handleSaveProduct() {
     isEditing = false;
     editingProductId = null;
     await loadAdminProducts();
+  } else if (result.error === 'UNAUTHENTICATED') {
+    showNotification('Sessão expirada. Faça login novamente.');
   } else {
     showNotification('Erro: ' + result.message);
   }
@@ -341,6 +387,8 @@ async function handleDeleteProduct(productId) {
     if (result.success) {
       showNotification('Produto excluído!');
       await loadAdminProducts();
+    } else if (result.error === 'UNAUTHENTICATED') {
+      showNotification('Sessão expirada. Faça login novamente.');
     } else {
       showNotification('Erro ao excluir produto.');
     }

@@ -1,73 +1,64 @@
 // ========================================
-// AUTH SERVICE - Operações de Autenticação
+// AUTH SERVICE - Firebase Authentication
 // ========================================
 
 import { auth } from './firebase-config.js';
 import { 
-  createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  createUserWithEmailAndPassword
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-
-// ========================================
-// REGISTRO
-// ========================================
-
-/**
- * Registra um novo usuário
- * @param {string} email - Email do usuário
- * @param {string} password - Senha do usuário
- * @returns {Object} Resultado da operação
- */
-export async function registerUser(email, password) {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    
-    console.log('Usuário registrado:', userCredential.user.email);
-    
-    return {
-      success: true,
-      user: userCredential.user,
-      message: 'Usuário registrado com sucesso'
-    };
-  } catch (error) {
-    console.error('Erro ao registrar usuário:', error);
-    return {
-      success: false,
-      error: error.message,
-      message: 'Erro ao registrar usuário'
-    };
-  }
-}
 
 // ========================================
 // LOGIN
 // ========================================
 
 /**
- * Realiza login de usuário
+ * Realiza login com email e senha
  * @param {string} email - Email do usuário
  * @param {string} password - Senha do usuário
  * @returns {Object} Resultado da operação
  */
-export async function loginUser(email, password) {
+export async function login(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    
-    console.log('Usuário logado:', userCredential.user.email);
+    console.log('Login realizado:', userCredential.user.email);
     
     return {
       success: true,
       user: userCredential.user,
-      message: 'Login realizado com sucesso'
+      message: 'Login realizado com sucesso!'
     };
   } catch (error) {
-    console.error('Erro ao fazer login:', error);
+    console.error('Erro no login:', error);
+    
+    let errorMessage = 'Erro ao fazer login';
+    
+    switch (error.code) {
+      case 'auth/invalid-email':
+        errorMessage = 'Email inválido';
+        break;
+      case 'auth/user-not-found':
+        errorMessage = 'Usuário não encontrado';
+        break;
+      case 'auth/wrong-password':
+        errorMessage = 'Senha incorreta';
+        break;
+      case 'auth/invalid-credential':
+        errorMessage = 'Credenciais inválidas';
+        break;
+      case 'auth/too-many-requests':
+        errorMessage = 'Muitas tentativas. Tente novamente mais tarde';
+        break;
+      default:
+        errorMessage = error.message;
+    }
+    
     return {
       success: false,
-      error: error.message,
-      message: 'Erro ao fazer login'
+      error: error.code,
+      message: errorMessage
     };
   }
 }
@@ -80,11 +71,10 @@ export async function loginUser(email, password) {
  * Realiza logout do usuário
  * @returns {Object} Resultado da operação
  */
-export async function logoutUser() {
+export async function logout() {
   try {
     await signOut(auth);
-    
-    console.log('Usuário deslogado');
+    console.log('Logout realizado');
     
     return {
       success: true,
@@ -101,28 +91,28 @@ export async function logoutUser() {
 }
 
 // ========================================
-// ESTADO DE AUTENTICAÇÃO
+// AUTH STATE LISTENER
 // ========================================
 
 /**
  * Observa mudanças no estado de autenticação
- * @param {Function} callback - Função callback que recebe o usuário
- * @returns {Function} Função para cancelar a observação
+ * @param {Function} callback - Função chamada quando o estado muda
+ * @returns {Function} Função para remover o listener
  */
-export function onAuthStateChange(callback) {
+export function onAuthChange(callback) {
   return onAuthStateChanged(auth, (user) => {
     if (user) {
-      console.log('Usuário autenticado:', user.email);
-      callback({ isLoggedIn: true, user: user });
+      console.log('Usuário autenticado:', user.email, 'UID:', user.uid);
+      callback({ isAuthenticated: true, user: user });
     } else {
       console.log('Usuário não autenticado');
-      callback({ isLoggedIn: false, user: null });
+      callback({ isAuthenticated: false, user: null });
     }
   });
 }
 
 // ========================================
-// USUÁRIO ATUAL
+// GET CURRENT USER
 // ========================================
 
 /**
@@ -133,9 +123,13 @@ export function getCurrentUser() {
   return auth.currentUser;
 }
 
+// ========================================
+// CHECK AUTH STATE
+// ========================================
+
 /**
- * Verifica se há um usuário logado
- * @returns {boolean} True se há usuário logado
+ * Verifica se há usuário autenticado
+ * @returns {boolean} True se autenticado
  */
 export function isAuthenticated() {
   return auth.currentUser !== null;

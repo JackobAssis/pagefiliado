@@ -2,7 +2,7 @@
 // FIRESTORE SERVICE - Operações de Banco de Dados
 // ========================================
 
-import { db } from './firebase-config.js';
+import { db, auth } from './firebase-config.js';
 import { 
   collection, 
   doc, 
@@ -20,18 +20,45 @@ import {
 const productsCollection = collection(db, 'products');
 
 // ========================================
-// CRIAÇÃO
+// VERIFICAÇÃO DE AUTENTICAÇÃO
 // ========================================
 
 /**
- * Cria um novo produto no Firestore
+ * Verifica se o usuário está autenticado
+ * @returns {Object} Resultado da verificação
+ */
+function requireAuth() {
+  const user = auth.currentUser;
+  if (!user) {
+    return {
+      success: false,
+      error: 'UNAUTHENTICATED',
+      message: 'Você precisa estar logado para realizar esta operação'
+    };
+  }
+  return { success: true, user: user };
+}
+
+// ========================================
+// CRIAÇÃO (PROTEGIDA)
+// ========================================
+
+/**
+ * Cria um novo produto no Firestore (requer autenticação)
  * @param {Object} productData - Dados do produto
  * @returns {Object} Resultado com sucesso e dados do produto criado
  */
 export async function createProduct(productData) {
+  // Verificar autenticação
+  const authCheck = requireAuth();
+  if (!authCheck.success) {
+    return authCheck;
+  }
+  
   try {
     const docRef = await addDoc(productsCollection, {
       ...productData,
+      createdBy: authCheck.user.uid,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
@@ -54,11 +81,11 @@ export async function createProduct(productData) {
 }
 
 // ========================================
-// LEITURA
+// LEITURA (PÚBLICA)
 // ========================================
 
 /**
- * Busca todos os produtos do Firestore
+ * Busca todos os produtos do Firestore (público)
  * @returns {Object} Resultado com lista de produtos
  */
 export async function getAllProducts() {
@@ -93,7 +120,7 @@ export async function getAllProducts() {
 }
 
 /**
- * Busca um produto específico pelo ID
+ * Busca um produto específico pelo ID (público)
  * @param {string} productId - ID do produto
  * @returns {Object} Resultado com dados do produto
  */
@@ -126,21 +153,28 @@ export async function getProductById(productId) {
 }
 
 // ========================================
-// ATUALIZAÇÃO
+// ATUALIZAÇÃO (PROTEGIDA)
 // ========================================
 
 /**
- * Atualiza um produto existente
+ * Atualiza um produto existente (requer autenticação)
  * @param {string} productId - ID do produto
  * @param {Object} productData - Novos dados do produto
  * @returns {Object} Resultado da operação
  */
 export async function updateProduct(productId, productData) {
+  // Verificar autenticação
+  const authCheck = requireAuth();
+  if (!authCheck.success) {
+    return authCheck;
+  }
+  
   try {
     const docRef = doc(db, 'products', productId);
     
     await updateDoc(docRef, {
       ...productData,
+      updatedBy: authCheck.user.uid,
       updatedAt: serverTimestamp()
     });
     
@@ -161,15 +195,21 @@ export async function updateProduct(productId, productData) {
 }
 
 // ========================================
-// EXCLUSÃO
+// EXCLUSÃO (PROTEGIDA)
 // ========================================
 
 /**
- * Exclui um produto do Firestore
+ * Exclui um produto do Firestore (requer autenticação)
  * @param {string} productId - ID do produto
  * @returns {Object} Resultado da operação
  */
 export async function deleteProduct(productId) {
+  // Verificar autenticação
+  const authCheck = requireAuth();
+  if (!authCheck.success) {
+    return authCheck;
+  }
+  
   try {
     const docRef = doc(db, 'products', productId);
     await deleteDoc(docRef);

@@ -8,31 +8,50 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Lock Overlay (Proteção por senha) -->
+    <!-- Lock Overlay (Proteção por autenticação) -->
     <div id="lock-overlay" class="lock-overlay">
         <div class="lock-box">
-            <h2>🔒 Área Restrita</h2>
+            <h2>🔐 Área Administrativa</h2>
             <p style="color: var(--text-gray); margin-bottom: 1rem;">
-                Digite o passcode para acessar o painel
+                Faça login com email e senha do Firebase
             </p>
-            <input 
-                type="password" 
-                id="admin-passcode" 
-                class="admin-input"
-                placeholder="Digite o passcode"
-                autocomplete="current-password"
-            >
-            <button class="btn" id="unlock-btn">Desbloquear</button>
-            <p id="lock-error" style="color: #ff4444; margin-top: 0.5rem; font-size: 0.9rem;"></p>
+            
+            <!-- Login Form -->
+            <form id="login-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <input 
+                    type="email" 
+                    id="admin-email" 
+                    class="admin-input"
+                    placeholder="Seu email"
+                    autocomplete="email"
+                    required
+                >
+                <input 
+                    type="password" 
+                    id="admin-password" 
+                    class="admin-input"
+                    placeholder="Sua senha"
+                    autocomplete="current-password"
+                    required
+                >
+                <button type="submit" class="btn" id="login-btn">Entrar</button>
+            </form>
+            
+            <p id="login-error" style="color: #ff4444; margin-top: 0.5rem; font-size: 0.9rem;"></p>
+            
+            <p style="color: var(--text-gray); font-size: 0.85rem; margin-top: 1rem; text-align: center;">
+                🔒 Acesso restrito a usuários autorizados
+            </p>
         </div>
     </div>
 
-    <!-- Admin Content (visível após desbloquear) -->
+    <!-- Admin Content (visível após autenticação) -->
     <div id="admin-content" style="display: none;">
         <!-- Toolbar -->
         <div class="admin-toolbar">
             <h1>🚴 Admin - Ciclismo Pro</h1>
-            <div style="display: flex; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span id="user-info" style="color: var(--text-gray); font-size: 0.9rem;"></span>
                 <a href="index.html" class="btn" style="background: #0088cc; width: auto; padding: 0.5rem 1rem;">
                     ← Home
                 </a>
